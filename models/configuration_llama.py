@@ -22,3 +22,24 @@ from transformers.models.llama.configuration_llama import LlamaConfig
 
 class MyLlamaConfig(LlamaConfig):
     model_type = "my-llama"
+
+class Method1LlamaConfig(LlamaConfig):
+    model_type = "method1-llama"
+
+class Method2LlamaConfig(LlamaConfig):
+    model_type = "method2-llama"
+
+class Method3LlamaConfig(LlamaConfig):
+    model_type = "method3-llama"
+
+class Method4LlamaConfig(LlamaConfig):
+    model_type = "method4-llama"
+
+class Method5LlamaConfig(LlamaConfig):
+    model_type = "method5-llama"
+
+class Method6LlamaConfig(LlamaConfig):
+    model_type = "method6-llama"
+
+class Method7LlamaConfig(LlamaConfig):
+    model_type = "method7-llama"

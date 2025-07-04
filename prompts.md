@@ -1,0 +1,9 @@
+我现在有一个修改transformer的需求：原先完整的transformer实现在代码文件original_model.py当中。我现在要新加一个代码文件：Method6.py，实现Method6LlamaForCausalLM(LlamaForCausalLM)，继承自LlamaForCausalLM。当然，根据具体的代码，需要先实现修改后的Method6DecoderLayer(LlamaDecoderLayer)和Method6LlamaModel(LlamaModel)才能实现Method6LlamaForCausalLM
+
+该模型相比于original_model.py当中LlamaForCausalLM唯一的改动在于：原先多头注意力和MLP部分的残差连接方式为：当前堆叠层内通过多头注意力或MLP前的hidden_state作为残差（即residual = hidden_states），加上经过多头注意力或MLP后的输出作为最终的输出（即hidden_states = residual + hidden_states）。现在多头注意力或MLP部分的残差连接方式变为：第一个堆叠层没有残差连接，第二个堆叠层的残差为：第一层的MLP处理后(注意：仅MLP！)的最终输出（即之前模型的"hidden_states = residual + hidden_states"的运算结果），第三个堆叠层的残差为：第一、第二层最终MLP处理后的最终输出之和……即：第M堆叠层的残差为：前1到n-1层最终MLP处理后的最终输出之和。
+
+值得一提的是：在代码文件Method3.py当中已经实现了关于残差连接的修改，而Method6.py和Method3.py的修改唯一的不同在于：Method3.py只修改了MLP部分的残差连接，即把MLP处理后的最终输出之和作为残差，作用于后续堆叠层的仅MLP模块的修改，多头注意力模块残差连接不修改。而Method6.py的残差计算方法和Method1.py一样，都是保留了之前所有的MLP部分的最终输出，累加作为残差。但除了MLP接受了这样的修改后残差之外，多头注意力模块也接受了同样的残差。也就是说，多头注意力模块也不再接受原先的残差，而是接受了和同一层的MLP模块完全一样的残差。
+
+请充分参照original_model.py和Method3.py当中的代码实现，合理的设计类的继承修改，完成这种对于transformer的修改。
+
+注意：在实际模型训练当中，肯定是需要修改__init__.py文件和configuration_llama.py文件的内容的。但这里我不要求你进行对这两个文件的修改。你只需要写出对Method6.py的正确实现就可以了。
