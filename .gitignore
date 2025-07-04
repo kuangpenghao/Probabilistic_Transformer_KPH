@@ -2,5 +2,5 @@ __pycache__
 wandb
 outputs
 *.sh
-prompts
+prompts.md
 .gitignore
