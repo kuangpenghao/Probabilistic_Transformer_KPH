@@ -2,14 +2,20 @@
 详细测试新残差连接的逻辑
 """
 import torch
-from models.configuration_llama import MyLlamaConfig
-from models.Method1 import NewResidualDecoderLayer
+import sys
+import os
+
+# 添加项目根目录到Python路径
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from models.configuration_llama import Method1LlamaConfig
+from models.Method1 import Method1DecoderLayer
 
 def test_residual_logic():
     """测试残差连接的具体逻辑"""
     print("测试残差连接的具体逻辑...")
     
-    config = MyLlamaConfig(
+    config = Method1LlamaConfig(
         vocab_size=100,
         hidden_size=64,
         intermediate_size=128,
@@ -21,7 +27,7 @@ def test_residual_logic():
     )
     
     # 创建3层进行测试
-    layers = [NewResidualDecoderLayer(config, layer_idx=i) for i in range(3)]
+    layers = [Method1DecoderLayer(config, layer_idx=i) for i in range(3)]
     
     # 创建输入
     batch_size = 1
@@ -60,7 +66,6 @@ def test_residual_logic():
                 output_attentions=False,
                 use_cache=False,
                 cache_position=None,
-                position_embeddings=position_embeddings,
                 previous_attn_outputs=previous_attn_outputs,
             )
             
@@ -90,7 +95,7 @@ def compare_with_original():
     
     from transformers.models.llama.modeling_llama import LlamaDecoderLayer
     
-    config = MyLlamaConfig(
+    config = Method1LlamaConfig(
         vocab_size=100,
         hidden_size=64,
         intermediate_size=128,
@@ -102,7 +107,7 @@ def compare_with_original():
     )
     
     # 创建新旧两种层
-    new_layer = NewResidualDecoderLayer(config, layer_idx=1)  # 第二层
+    new_layer = Method1DecoderLayer(config, layer_idx=1)  # 第二层
     original_layer = LlamaDecoderLayer(config, layer_idx=1)
     
     # 确保权重相同
@@ -110,6 +115,7 @@ def compare_with_original():
     
     # 创建输入
     hidden_states = torch.randn(1, 4, config.hidden_size)
+    position_ids = torch.arange(4).unsqueeze(0)  # [0, 1, 2, 3]
     
     # 创建假的previous_attn_outputs
     fake_previous_outputs = [torch.randn(1, 4, config.hidden_size)]
@@ -118,11 +124,15 @@ def compare_with_original():
         # 新残差连接
         new_outputs = new_layer(
             hidden_states,
+            position_ids=position_ids,
             previous_attn_outputs=fake_previous_outputs,
         )
         
         # 原始残差连接
-        original_outputs = original_layer(hidden_states)
+        original_outputs = original_layer(
+            hidden_states,
+            position_ids=position_ids,
+        )
         
         print(f"新残差连接输出形状: {new_outputs[0].shape}")
         print(f"原始残差连接输出形状: {original_outputs[0].shape}")

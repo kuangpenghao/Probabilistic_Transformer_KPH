@@ -1,15 +1,21 @@
 """
-调试新残差连接实现中的问题
+调试Method1残差连接实现中的问题
 """
 import torch
-from models.configuration_llama import MyLlamaConfig
-from models.Method1 import NewResidualDecoderLayer
+import sys
+import os
+
+# 添加项目根目录到Python路径
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from models.configuration_llama import Method1LlamaConfig
+from models.Method1 import Method1DecoderLayer
 
 def debug_attention_output():
     """调试注意力模块的输出"""
     print("调试注意力模块输出...")
     
-    config = MyLlamaConfig(
+    config = Method1LlamaConfig(
         vocab_size=100,
         hidden_size=64,
         intermediate_size=128,
@@ -21,7 +27,7 @@ def debug_attention_output():
     )
     
     # 创建单个解码器层
-    layer = NewResidualDecoderLayer(config, layer_idx=0)
+    layer = Method1DecoderLayer(config, layer_idx=0)
     
     # 创建输入
     batch_size = 1
