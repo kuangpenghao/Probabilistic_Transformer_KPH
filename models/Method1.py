@@ -14,9 +14,6 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM, LlamaMode
 from .configuration_llama import Method1LlamaConfig
 
 class Method1DecoderLayer(LlamaDecoderLayer):
-    """
-    自定义解码器层，支持新的残差连接方式
-    """
     def __init__(self, config, layer_idx: int):
         super().__init__(config, layer_idx)
         self.layer_idx = layer_idx
@@ -63,7 +60,6 @@ class Method1DecoderLayer(LlamaDecoderLayer):
             attn_output = attn_result
             self_attn_weights = None
         
-        # 新的残差连接方式：
         # 第一层(layer_idx=0)：没有残差连接
         # 第M层：残差为前1到M-1层最终注意力处理后的输出之和
         if self.layer_idx == 0:
@@ -98,9 +94,6 @@ class Method1DecoderLayer(LlamaDecoderLayer):
 
 
 class Method1LlamaModel(LlamaModel):
-    """
-    实现新残差连接方式的LlamaModel
-    """
     config_class = Method1LlamaConfig
 
     def __init__(self, config: Method1LlamaConfig):
@@ -216,7 +209,7 @@ class Method1LlamaModel(LlamaModel):
                 all_self_attns += (layer_outputs[1],)
             
             # 保存当前层的注意力输出
-            current_attn_output = layer_outputs[-1]  # 最后一个是注意力输出
+            current_attn_output = layer_outputs[-1]
             all_attn_outputs.append(current_attn_output)
 
         hidden_states = self.norm(hidden_states)
@@ -236,9 +229,6 @@ class Method1LlamaModel(LlamaModel):
 
 
 class Method1LlamaForCausalLM(LlamaForCausalLM):
-    """
-    实现新残差连接方式的因果语言模型
-    """
     config_class = Method1LlamaConfig
 
     def __init__(self, config: Method1LlamaConfig):

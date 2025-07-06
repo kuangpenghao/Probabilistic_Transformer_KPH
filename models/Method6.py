@@ -14,10 +14,6 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM, LlamaMode
 from .configuration_llama import Method6LlamaConfig
 
 class Method6DecoderLayer(LlamaDecoderLayer):
-    """
-    自定义解码器层，注意力和MLP模块都使用相同的新残差连接方式
-    基于Method3，但注意力模块也使用相同的MLP输出累加残差
-    """
     def __init__(self, config, layer_idx: int):
         super().__init__(config, layer_idx)
         self.layer_idx = layer_idx
@@ -64,9 +60,6 @@ class Method6DecoderLayer(LlamaDecoderLayer):
             attn_output = attn_result
             self_attn_weights = None
         
-        # === 注意力部分的新残差连接方式 (使用与MLP相同的残差) ===
-        # 第一层(layer_idx=0)：没有残差连接
-        # 第M层：残差为前1到M-1层最终MLP处理后的输出之和
         if self.layer_idx == 0:
             # 第一层没有残差连接
             hidden_states = attn_output
@@ -79,9 +72,6 @@ class Method6DecoderLayer(LlamaDecoderLayer):
                 # 如果没有提供之前的输出，回退到原始行为
                 hidden_states = original_hidden_states + attn_output
 
-        # === MLP部分的新残差连接方式 (与Method3相同) ===
-        # 第一层(layer_idx=0)：没有残差连接
-        # 第M层：残差为前1到M-1层最终MLP处理后的输出之和
         mlp_input = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)
         mlp_output = self.mlp(hidden_states)
@@ -112,10 +102,6 @@ class Method6DecoderLayer(LlamaDecoderLayer):
 
 
 class Method6LlamaModel(LlamaModel):
-    """
-    实现新残差连接方式的LlamaModel
-    注意力和MLP模块都使用相同的MLP输出累加残差
-    """
     config_class = Method6LlamaConfig
 
     def __init__(self, config: Method6LlamaConfig):
@@ -255,10 +241,6 @@ class Method6LlamaModel(LlamaModel):
 
 
 class Method6LlamaForCausalLM(LlamaForCausalLM):
-    """
-    实现新残差连接方式的因果语言模型
-    注意力和MLP模块都使用相同的MLP输出累加残差
-    """
     config_class = Method6LlamaConfig
 
     def __init__(self, config: Method6LlamaConfig):

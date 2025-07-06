@@ -21,7 +21,8 @@ Copy `run_clm.sh.template` to `run_clm.sh` and run it.
 cp run_clm.sh.template run_clm.sh
 
 # run the script
-bash run_clm.sh
+conda activate pt
+sapp bash run_clm.sh
 ```
 
 srun -G 8 -c 1 --mem=10M nvidia-smi
@@ -30,3 +31,8 @@ ls -la outputs/my-llama-tiny/
 
 删除旧的checkpoint：rm -rf outputs/my-llama-tiny/*
 
+tmux new -s session_name
+tmux detach 或Ctrl+B,D//临时退出
+tmux ls
+tmux attach -t session_name//重新进入
+杀死会话：进入后exit或tmux kill-session -t session_named

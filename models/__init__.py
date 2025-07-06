@@ -17,11 +17,11 @@ AutoModel.register(MyLlamaConfig, MyLlamaModel)
 AutoModelForCausalLM.register(MyLlamaConfig, MyLlamaForCausalLM)
 '''
 
-
+'''
 AutoConfig.register("method1-llama", Method1LlamaConfig)
 AutoModel.register(Method1LlamaConfig, Method1LlamaModel)
 AutoModelForCausalLM.register(Method1LlamaConfig, Method1LlamaForCausalLM)
-''''''
+'''
 
 '''
 AutoConfig.register("method2-llama", Method2LlamaConfig)

@@ -14,10 +14,6 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM, LlamaMode
 from .configuration_llama import Method5LlamaConfig
 
 class Method5DecoderLayer(LlamaDecoderLayer):
-    """
-    自定义解码器层，注意力和MLP模块都使用相同的新残差连接方式
-    基于Method1，但MLP模块也使用相同的注意力输出累加残差
-    """
     def __init__(self, config, layer_idx: int):
         super().__init__(config, layer_idx)
         self.layer_idx = layer_idx
@@ -64,7 +60,6 @@ class Method5DecoderLayer(LlamaDecoderLayer):
             attn_output = attn_result
             self_attn_weights = None
         
-        # === 注意力部分的新残差连接方式 (与Method1相同) ===
         # 第一层(layer_idx=0)：没有残差连接
         # 第M层：残差为前1到M-1层最终注意力处理后的输出之和
         if self.layer_idx == 0:
@@ -82,9 +77,6 @@ class Method5DecoderLayer(LlamaDecoderLayer):
         # 保存当前层的最终注意力输出，用于后续层
         current_attn_output = hidden_states
 
-        # === MLP部分的新残差连接方式 (与注意力部分使用相同的残差) ===
-        # 注意：这里MLP也使用与注意力相同的残差连接方式
-        # 即：前面所有层注意力输出的累加和作为残差
         hidden_states = self.post_attention_layernorm(hidden_states)
         mlp_output = self.mlp(hidden_states)
         
@@ -97,8 +89,6 @@ class Method5DecoderLayer(LlamaDecoderLayer):
                 residual_sum = sum(previous_attn_outputs)
                 hidden_states = residual_sum + mlp_output
             else:
-                # 如果没有提供之前的输出，回退到原始行为
-                # 注意：这里使用current_attn_output作为回退残差
                 hidden_states = current_attn_output + mlp_output
 
         outputs = (hidden_states,)
@@ -112,10 +102,6 @@ class Method5DecoderLayer(LlamaDecoderLayer):
 
 
 class Method5LlamaModel(LlamaModel):
-    """
-    实现新残差连接方式的LlamaModel
-    注意力和MLP模块都使用相同的注意力输出累加残差
-    """
     config_class = Method5LlamaConfig
 
     def __init__(self, config: Method5LlamaConfig):
@@ -251,10 +237,6 @@ class Method5LlamaModel(LlamaModel):
 
 
 class Method5LlamaForCausalLM(LlamaForCausalLM):
-    """
-    实现新残差连接方式的因果语言模型
-    注意力和MLP模块都使用相同的注意力输出累加残差
-    """
     config_class = Method5LlamaConfig
 
     def __init__(self, config: Method5LlamaConfig):

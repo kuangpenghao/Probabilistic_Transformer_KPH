@@ -14,9 +14,6 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM, LlamaMode
 from .configuration_llama import Method2LlamaConfig
 
 class Method2DecoderLayer(LlamaDecoderLayer):
-    """
-    自定义解码器层，支持新的残差连接方式
-    """
     def __init__(self, config, layer_idx: int):
         super().__init__(config, layer_idx)
         self.layer_idx = layer_idx
@@ -99,14 +96,10 @@ class Method2DecoderLayer(LlamaDecoderLayer):
 
 
 class Method2LlamaModel(LlamaModel):
-    """
-    实现新残差连接方式的LlamaModel
-    """
     config_class = Method2LlamaConfig
 
     def __init__(self, config: Method2LlamaConfig):
         super().__init__(config)
-        # 替换所有的decoder layer为新的实现
         self.layers = nn.ModuleList(
             [Method2DecoderLayer(config, layer_idx) for layer_idx in range(config.num_hidden_layers)]
         )
@@ -237,9 +230,6 @@ class Method2LlamaModel(LlamaModel):
 
 
 class Method2LlamaForCausalLM(LlamaForCausalLM):
-    """
-    实现新残差连接方式的因果语言模型
-    """
     config_class = Method2LlamaConfig
 
     def __init__(self, config: Method2LlamaConfig):

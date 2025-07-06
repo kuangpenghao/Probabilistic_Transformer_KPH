@@ -14,10 +14,6 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM, LlamaMode
 from .configuration_llama import Method7LlamaConfig
 
 class Method7DecoderLayer(LlamaDecoderLayer):
-    """
-    自定义解码器层，同时支持新的注意力和MLP残差连接方式
-    结合了Method1（注意力残差连接）和Method3（MLP残差连接）的功能
-    """
     def __init__(self, config, layer_idx: int):
         super().__init__(config, layer_idx)
         self.layer_idx = layer_idx
@@ -65,9 +61,6 @@ class Method7DecoderLayer(LlamaDecoderLayer):
             attn_output = attn_result
             self_attn_weights = None
         
-        # === 注意力部分的新残差连接方式 (来自Method1) ===
-        # 第一层(layer_idx=0)：没有残差连接
-        # 第M层：残差为前1到M-1层最终注意力处理后的输出之和
         if self.layer_idx == 0:
             # 第一层没有残差连接
             hidden_states = attn_output
@@ -82,10 +75,7 @@ class Method7DecoderLayer(LlamaDecoderLayer):
 
         # 保存当前层的最终注意力输出，用于后续层
         current_attn_output = hidden_states
-
-        # === MLP部分的新残差连接方式 (来自Method3) ===
-        # 第一层(layer_idx=0)：没有残差连接
-        # 第M层：残差为前1到M-1层最终MLP处理后的输出之和
+        
         mlp_input = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)
         mlp_output = self.mlp(hidden_states)
@@ -99,7 +89,6 @@ class Method7DecoderLayer(LlamaDecoderLayer):
                 residual_sum = sum(previous_mlp_outputs)
                 hidden_states = residual_sum + mlp_output
             else:
-                # 如果没有提供之前的输出，回退到原始行为
                 hidden_states = mlp_input + mlp_output
 
         # 保存当前层的最终MLP输出，用于后续层
@@ -116,10 +105,6 @@ class Method7DecoderLayer(LlamaDecoderLayer):
 
 
 class Method7LlamaModel(LlamaModel):
-    """
-    实现新的注意力和MLP残差连接方式的LlamaModel
-    结合了Method1和Method3的功能
-    """
     config_class = Method7LlamaConfig
 
     def __init__(self, config: Method7LlamaConfig):
@@ -238,14 +223,12 @@ class Method7LlamaModel(LlamaModel):
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
             
-            # 保存当前层的注意力输出和MLP输出
-            # layer_outputs的结构: (hidden_states, [self_attn_weights], current_attn_output, current_mlp_output)
             if output_attentions:
                 current_attn_output = layer_outputs[2]  # 注意力输出
                 current_mlp_output = layer_outputs[3]   # MLP输出
             else:
-                current_attn_output = layer_outputs[1]  # 注意力输出
-                current_mlp_output = layer_outputs[2]   # MLP输出
+                current_attn_output = layer_outputs[1]
+                current_mlp_output = layer_outputs[2]
             
             all_attn_outputs.append(current_attn_output)
             all_mlp_outputs.append(current_mlp_output)
@@ -267,10 +250,6 @@ class Method7LlamaModel(LlamaModel):
 
 
 class Method7LlamaForCausalLM(LlamaForCausalLM):
-    """
-    实现新的注意力和MLP残差连接方式的因果语言模型
-    结合了Method1和Method3的功能
-    """
     config_class = Method7LlamaConfig
 
     def __init__(self, config: Method7LlamaConfig):
