@@ -68,17 +68,13 @@ class Method1DecoderLayer_v2(LlamaDecoderLayer):
         hidden_states = self.post_attention_layernorm(hidden_states)
         mlp_output = self.mlp(hidden_states)
         
-        if self.layer_idx == 0:
-            # 第一层没有残差连接
-            hidden_states = mlp_output
+        # 计算前面所有层MLP输出的累加和作为残差
+        if previous_mlp_outputs is not None and len(previous_mlp_outputs) > 0:
+            residual_sum = sum(previous_mlp_outputs)
+            hidden_states = (residual_sum + mlp_output) / (len(previous_mlp_outputs) + 1) + mlp_input
         else:
-            # 计算前面所有层MLP输出的累加和作为残差
-            if previous_mlp_outputs is not None and len(previous_mlp_outputs) > 0:
-                residual_sum = sum(previous_mlp_outputs)
-                hidden_states = (residual_sum + mlp_output) / (len(previous_mlp_outputs) + 1) + mlp_input
-            else:
-                # 如果没有提供之前的输出，回退到原始行为
-                hidden_states = mlp_input + mlp_output
+            # 如果没有提供之前的输出，回退到原始行为
+            hidden_states = mlp_input + mlp_output
 
         # 保存当前层的最终MLP输出，用于后续层
         current_mlp_output = hidden_states
@@ -88,7 +84,7 @@ class Method1DecoderLayer_v2(LlamaDecoderLayer):
             outputs += (self_attn_weights,)
         
         # 添加当前层的MLP输出到返回值中
-        outputs += (current_mlp_output,)
+        outputs += (mlp_output,)
 
         return outputs
 

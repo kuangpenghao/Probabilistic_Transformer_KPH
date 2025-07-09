@@ -16,8 +16,15 @@ def list_tmux_sessions():
         print(f"❌ 无法获取会话列表: {error_msg}")
         return []
 
-    sessions = result.stdout.decode().strip()
-    print(sessions)
+    # 解析每一行，只保留冒号前的会话名
+    lines = result.stdout.decode().strip().split('\n')
+    sessions = [line.split(':')[0] for line in lines if line]
+    return sessions
+
+def print_tmux_sessions():
+    sessions=list_tmux_sessions()
+    for session in sessions:
+        print(session)
 
 def close_tmux_session(session_name):
     """
@@ -69,14 +76,22 @@ def attach_tmux_session(session_name):
         print(f"❌ 无法进入会话 '{session_name}': {error_msg}")
 
 if __name__ == "__main__":
-    sessions = [
-        "v2-method2",
-        "v2-method2-2",
-        "v2-method1",
-        "v2-method1-2",
-        "v1-method0",
-        "v1-method0-2"
-    ]
 
+    '''
+    sessions = list_tmux_sessions()
+
+    print(sessions)'''
+
+    sessions=[
+        "Method2-v2-1",
+        "Method2-v2-2",
+        "v2m1-1",
+        "v2m1-2",
+        "v2m2-1",
+        "v2m2-2",
+        "base-1",
+        "base-2"
+    ]
+    
     for session in sessions:
         attach_tmux_session(session)

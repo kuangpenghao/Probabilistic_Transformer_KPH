@@ -60,17 +60,13 @@ class Method2DecoderLayer_v2(LlamaDecoderLayer):
             self_attn_weights = None
         
         # Attention处新的残差连接方式：
-        if self.layer_idx == 0:
-            # 第一层没有残差连接
-            hidden_states = attn_output
+        # 计算前面所有层注意力输出的平均值作为残差
+        if previous_attn_outputs is not None and len(previous_attn_outputs) > 0:
+            residual_sum = sum(previous_attn_outputs)
+            hidden_states = (residual_sum + attn_output)/(  len(previous_attn_outputs) + 1)+ original_hidden_states
         else:
-            # 计算前面所有层注意力输出的平均值作为残差
-            if previous_attn_outputs is not None and len(previous_attn_outputs) > 0:
-                residual_sum = sum(previous_attn_outputs)
-                hidden_states = (residual_sum + attn_output)/(  len(previous_attn_outputs) + 1)+ original_hidden_states
-            else:
-                # 如果没有提供之前的输出，回退到原始行为
-                hidden_states = original_hidden_states + attn_output
+            # 如果没有提供之前的输出，回退到原始行为
+            hidden_states = original_hidden_states + attn_output
 
         # 保存当前层的最终注意力输出，用于后续层
         current_attn_output = hidden_states
@@ -86,7 +82,7 @@ class Method2DecoderLayer_v2(LlamaDecoderLayer):
             outputs += (self_attn_weights,)
         
         # 添加当前层的注意力输出到返回值中
-        outputs += (current_attn_output,)
+        outputs += (attn_output,)
 
         return outputs
 
