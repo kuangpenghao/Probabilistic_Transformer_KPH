@@ -5,11 +5,12 @@ import torch
 import sys
 import os
 
-# 添加项目根目录到Python路径
+# 添加项目根目录和模型目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-from models.configuration_llama import Method1LlamaConfig
-from models.Method1 import Method1DecoderLayer, Method1LlamaModel, Method1LlamaForCausalLM
+from configuration_llama import Method1LlamaConfig
+from Method1 import Method1DecoderLayer, Method1LlamaModel, Method1LlamaForCausalLM
 
 def demonstrate_new_residual():
     """演示Method1残差连接方式"""

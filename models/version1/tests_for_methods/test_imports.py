@@ -22,7 +22,9 @@ def test_import_for_file(file_path):
         imports = []
         for line in lines:
             line = line.strip()
-            if line.startswith('from models.') and 'import' in line:
+            if (line.startswith('from models.') and 'import' in line) or \
+               (line.startswith('from configuration_llama') and 'import' in line) or \
+               (line.startswith('from Method') and 'import' in line):
                 imports.append(line)
         
         print(f"  发现导入语句: {len(imports)}")
@@ -56,13 +58,13 @@ def main():
     
     # 测试文件列表
     test_files = [
-        "/home/kuangph/hf-starter/tests_for_methods/test_for_Method1/test_new_residual.py",
-        "/home/kuangph/hf-starter/tests_for_methods/test_for_Method1/test_residual_logic.py",
-        "/home/kuangph/hf-starter/tests_for_methods/test_for_Method2/test_method2.py",
-        "/home/kuangph/hf-starter/tests_for_methods/test_for_Method3/test_method3.py",
-        "/home/kuangph/hf-starter/tests_for_methods/test_for_Method5/test_method5.py",
-        "/home/kuangph/hf-starter/tests_for_methods/test_for_Method6/test_method6.py",
-        "/home/kuangph/hf-starter/tests_for_methods/test_for_Method7/test_method7.py",
+        "/home/kuangph/hf-starter/models/version1_25.7.6/tests_for_methods/test_for_Method1/test_new_residual.py",
+        "/home/kuangph/hf-starter/models/version1_25.7.6/tests_for_methods/test_for_Method1/test_residual_logic.py",
+        "/home/kuangph/hf-starter/models/version1_25.7.6/tests_for_methods/test_for_Method2/debug_residual_shape.py",
+        "/home/kuangph/hf-starter/models/version1_25.7.6/tests_for_methods/test_for_Method3/test_method3.py",
+        "/home/kuangph/hf-starter/models/version1_25.7.6/tests_for_methods/test_for_Method5/test_method5.py",
+        "/home/kuangph/hf-starter/models/version1_25.7.6/tests_for_methods/test_for_Method6/test_method6.py",
+        "/home/kuangph/hf-starter/models/version1_25.7.6/tests_for_methods/test_for_Method7/test_method7.py",
     ]
     
     success_count = 0

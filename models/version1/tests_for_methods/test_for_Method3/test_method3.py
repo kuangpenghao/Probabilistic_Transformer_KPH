@@ -8,11 +8,12 @@ import numpy as np
 import sys
 import os
 
-# 添加项目根目录到Python路径
+# 添加项目根目录和模型目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-from models.Method3 import Method3LlamaForCausalLM, Method3LlamaModel, Method3DecoderLayer
-from models.configuration_llama import Method3LlamaConfig
+from Method3 import Method3LlamaForCausalLM, Method3LlamaModel, Method3DecoderLayer
+from configuration_llama import Method3LlamaConfig
 
 def test_config():
     """测试配置是否正确"""
