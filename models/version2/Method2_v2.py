@@ -33,7 +33,6 @@ class Method2DecoderLayer_v2(LlamaDecoderLayer):
         **kwargs,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]], Optional[torch.Tensor]]:
         
-        # 保存当前层输入，用于MLP的残差连接
         original_hidden_states = hidden_states
         
         # 输入层归一化
@@ -60,9 +59,7 @@ class Method2DecoderLayer_v2(LlamaDecoderLayer):
             attn_output = attn_result
             self_attn_weights = None
         
-        # 新的残差连接方式：
-        # 第一层(layer_idx=0)：没有残差连接
-        # 第M层：残差为前1到M-1层最终注意力处理后的输出之和
+        # Attention处新的残差连接方式：
         if self.layer_idx == 0:
             # 第一层没有残差连接
             hidden_states = attn_output
@@ -70,8 +67,7 @@ class Method2DecoderLayer_v2(LlamaDecoderLayer):
             # 计算前面所有层注意力输出的平均值作为残差
             if previous_attn_outputs is not None and len(previous_attn_outputs) > 0:
                 residual_sum = sum(previous_attn_outputs)
-                residual_avg = residual_sum / len(previous_attn_outputs)
-                hidden_states = residual_avg + attn_output
+                hidden_states = (residual_sum + attn_output)/(  len(previous_attn_outputs) + 1)+ original_hidden_states
             else:
                 # 如果没有提供之前的输出，回退到原始行为
                 hidden_states = original_hidden_states + attn_output

@@ -63,8 +63,7 @@ class Method1DecoderLayer_v2(LlamaDecoderLayer):
         # 注意力部分保持原始的残差连接
         hidden_states = residual + attn_output
 
-        # 第一层(layer_idx=0)：没有残差连接
-        # 第M层：残差为前1到M-1层最终MLP处理后的输出之和
+        # MLP处的残差连接修改
         mlp_input = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)
         mlp_output = self.mlp(hidden_states)

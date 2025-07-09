@@ -63,18 +63,18 @@ def attach_tmux_session(session_name):
     )
 
     if result.returncode == 0:
-        print(f"✅ 成功附加到会话 '{session_name}'")
+        print(f"✅ 成功进入会话 '{session_name}'")
     else:
         error_msg = result.stderr.decode().strip()
-        print(f"❌ 无法附加到会话 '{session_name}': {error_msg}")
+        print(f"❌ 无法进入会话 '{session_name}': {error_msg}")
 
 if __name__ == "__main__":
     sessions = [
-        "v2-method1",
         "v2-method2",
-        "v1-method0",
-        "v2-method1-2",
         "v2-method2-2",
+        "v2-method1",
+        "v2-method1-2",
+        "v1-method0",
         "v1-method0-2"
     ]
 
