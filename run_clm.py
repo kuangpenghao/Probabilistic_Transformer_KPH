@@ -638,6 +638,30 @@ def main():
         trainer.log_metrics("train", metrics)
         trainer.save_metrics("train", metrics)
         trainer.save_state()
+        
+        # 检查是否是Method3模型，如果是则保存可学习权重参数
+        try:
+            # 检查模型是否有save_learned_parameters方法（Method3_v2特有）
+            if hasattr(model, 'save_learned_parameters'):
+                logger.info("检测到Method3_v2模型，正在保存可学习权重参数...")
+                save_path = model.save_learned_parameters(training_args.output_dir)
+                logger.info(f"可学习权重参数已保存到: {save_path}")
+            else:
+                # 检查是否是包装在trainer中的Method3模型
+                if hasattr(trainer.model, 'save_learned_parameters'):
+                    logger.info("检测到Method3_v2模型，正在保存可学习权重参数...")
+                    save_path = trainer.model.save_learned_parameters(training_args.output_dir)
+                    logger.info(f"可学习权重参数已保存到: {save_path}")
+                else:
+                    # 尝试检查模型类型
+                    model_class_name = model.__class__.__name__
+                    if "Method3" in model_class_name:
+                        logger.warning(f"检测到Method3相关模型 ({model_class_name})，但没有找到save_learned_parameters方法")
+                    else:
+                        logger.info(f"当前模型 ({model_class_name}) 不是Method3_v2模型，跳过权重参数保存")
+        except Exception as e:
+            logger.warning(f"保存可学习权重参数时出现错误: {e}")
+            logger.info("继续执行其他保存操作...")
 
     # Evaluation
     if training_args.do_eval:
