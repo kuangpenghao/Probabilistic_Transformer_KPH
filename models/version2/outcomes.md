@@ -9,56 +9,30 @@
 
 # 实验数据
 
-### Method1_1
+### Method1
 ```
 ***** eval metrics *****
   epoch                   =        5.0
-  eval_accuracy           =     0.4955
-  eval_loss               =     2.5835
-  eval_perplexity         =    13.2429
-  eval_runtime            = 0:00:02.44
+  eval_accuracy           =     0.5151
+  eval_loss               =     2.4321
+  eval_perplexity         =    11.3829
+  eval_runtime            = 0:00:03.59
   eval_samples            =        143
-  eval_samples_per_second =     58.469
-  eval_steps_per_second   =       7.36
+  eval_samples_per_second =     39.773
+  eval_steps_per_second   =      5.006
 ```
 
-### Method1_2
+### Method3
 ```
 ***** eval metrics *****
   epoch                   =        5.0
-  eval_accuracy           =     0.4957
-  eval_loss               =     2.5839
-  eval_perplexity         =    13.2485
-  eval_runtime            = 0:00:02.41
+  eval_accuracy           =     0.5152
+  eval_loss               =     2.4224
+  eval_perplexity         =    11.2731
+  eval_runtime            = 0:00:03.73
   eval_samples            =        143
-  eval_samples_per_second =     59.251
-  eval_steps_per_second   =      7.458
-```
-
-### Method3_1
-```
-***** eval metrics *****
-  epoch                   =        5.0
-  eval_accuracy           =     0.4963
-  eval_loss               =     2.5738
-  eval_perplexity         =    13.1153
-  eval_runtime            = 0:00:02.46
-  eval_samples            =        143
-  eval_samples_per_second =     57.947
-  eval_steps_per_second   =      7.294
-```
-
-### Method3_2
-```
-***** eval metrics *****
-  epoch                   =        5.0
-  eval_accuracy           =     0.4963
-  eval_loss               =     2.5731
-  eval_perplexity         =    13.1064
-  eval_runtime            = 0:00:02.49
-  eval_samples            =        143
-  eval_samples_per_second =     57.392
-  eval_steps_per_second   =      7.224
+  eval_samples_per_second =     38.293
+  eval_steps_per_second   =       4.82
 ```
 
 

@@ -89,7 +89,7 @@ class Method3DecoderLayer(LlamaDecoderLayer):
             outputs += (self_attn_weights,)
         
         # 添加当前层的MLP输出到返回值中
-        outputs += (current_mlp_output,)
+        outputs += (mlp_output,)
 
         return outputs
 
