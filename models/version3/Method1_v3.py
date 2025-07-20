@@ -16,7 +16,7 @@ from .configuration_llama_v3 import LlamaConfig, Method1Config_v3
 
 class Method1LlamaAttention_v3(LlamaAttention):
     """
-    自定义Attention类，支持使用预计算的Q、K、W^V进行attention计算
+    简化版自定义Attention类，存储attn_weights和V权重来重新计算attention
     """
     def __init__(self, config, layer_idx: Optional[int] = None):
         super().__init__(config, layer_idx)
@@ -32,86 +32,62 @@ class Method1LlamaAttention_v3(LlamaAttention):
         cache_position: Optional[torch.LongTensor] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         **kwargs,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Cache], torch.Tensor, torch.Tensor, torch.Tensor]:
-        # 调用父类的forward方法
-        attention_output = super().forward( 
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Cache], torch.Tensor, torch.Tensor]:
+        # 调用父类的forward方法获取attention输出和权重
+        attention_result = super().forward( 
             hidden_states=hidden_states,
             attention_mask=attention_mask,
             position_ids=position_ids,
             past_key_value=past_key_value,
-            output_attentions=output_attentions,
+            output_attentions=True,  # 强制获取attn_weights
             use_cache=use_cache,
             cache_position=cache_position,
             position_embeddings=position_embeddings,
             **kwargs,
         )
         
-        # 计算Q、K矩阵用于存储（应用位置编码后的版本）
-        bsz, q_len, _ = hidden_states.size()
-        
-        # 计算原始Q、K投影
-        query_states = self.q_proj(hidden_states)
-        key_states = self.k_proj(hidden_states)
-        
-        # Reshape为多头格式
-        query_states = query_states.view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-        key_states = key_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
-        
-        # 应用位置编码
-        if position_embeddings is not None:
-            cos, sin = position_embeddings
-            query_states, key_states = self._apply_rotary_pos_emb(query_states, key_states, cos, sin)
-        
-        # 确保返回值格式正确
-        if isinstance(attention_output, tuple):
-            attn_output, attn_weights, past_key_value = attention_output[0], attention_output[1] if len(attention_output) > 1 else None, attention_output[2] if len(attention_output) > 2 else None
+        # 解析返回值
+        if isinstance(attention_result, tuple):
+            attn_output = attention_result[0]
+            attn_weights = attention_result[1]  # 这是已经计算好的注意力权重
+            past_key_value = attention_result[2] if len(attention_result) > 2 else None
         else:
-            attn_output, attn_weights, past_key_value = attention_output, None, None
+            attn_output = attention_result
+            attn_weights = None
+            past_key_value = None
         
-        # 返回attention输出以及应用位置编码后的Q、K矩阵和W^V权重
-        return (attn_output, attn_weights, past_key_value, query_states, key_states, self.v_proj.weight)
+        # 返回attention输出、原始权重、past_key_value、注意力权重矩阵和V权重
+        return (attn_output, attn_weights if output_attentions else None, past_key_value, 
+                attn_weights, self.v_proj.weight)
     
-    def forward_with_precomputed_qkv(
+    def forward_with_precomputed_weights(
         self,
         hidden_states: torch.Tensor,
-        precomputed_query_states: torch.Tensor,
-        precomputed_key_states: torch.Tensor,
+        attn_weights: torch.Tensor,
         v_proj_weight: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         **kwargs,
     ) -> torch.Tensor:
         """
-        使用预计算的Q、K矩阵和W^V权重进行attention计算
+        使用预计算的注意力权重和V权重进行attention计算
         只重新计算V矩阵（使用新的输入嵌入和存储的W^V权重）
         
         Args:
             hidden_states: 输入的隐藏状态（当前层的输入）
-            precomputed_query_states: 预计算的Q矩阵（已应用位置编码和reshape）
-            precomputed_key_states: 预计算的K矩阵（已应用位置编码和reshape）
+            attn_weights: 预计算的注意力权重矩阵 (bsz, num_heads, q_len, k_len)
             v_proj_weight: 预计算的V投影权重
-            attention_mask: 注意力掩码
-            position_embeddings: 位置嵌入
             
         Returns:
             attention输出
         """
         bsz, q_len, _ = hidden_states.size()
         
-        # 使用预计算的Q、K矩阵（已经应用了位置编码和reshape）
-        query_states = precomputed_query_states
-        key_states = precomputed_key_states
-        
-        # 只重新计算V矩阵（使用新输入 + 存储的W^V权重）
+        # 重新计算V矩阵,Reshape V为attention所需格式,重复V以匹配注意力头数
         value_states = F.linear(hidden_states, v_proj_weight, bias=self.v_proj.bias)
-        
-        # Reshape V为attention所需格式
         value_states = value_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
+        value_states = self._repeat_kv(value_states, self.num_key_value_groups)
         
-        # 计算完整的attention
-        attn_output = self._compute_scaled_dot_product_attention(
-            query_states, key_states, value_states, attention_mask, bsz, q_len
-        )
+        # 直接使用存储的注意力权重与新的V相乘
+        attn_output = torch.matmul(attn_weights, value_states)
         
         # Reshape并应用输出投影
         attn_output = attn_output.transpose(1, 2).contiguous()
@@ -120,53 +96,12 @@ class Method1LlamaAttention_v3(LlamaAttention):
         
         return attn_output
     
-    def _apply_rotary_pos_emb(self, q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor):
-        """应用旋转位置编码"""
-        q_embed = (q * cos) + (self._rotate_half(q) * sin)
-        k_embed = (k * cos) + (self._rotate_half(k) * sin)
-        return q_embed, k_embed
-    
-    def _rotate_half(self, x: torch.Tensor):
-        """旋转张量的一半隐藏维度"""
-        x1 = x[..., : x.shape[-1] // 2]
-        x2 = x[..., x.shape[-1] // 2 :]
-        return torch.cat((-x2, x1), dim=-1)
-    
     def _repeat_kv(self, hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-        """重复key-value张量以匹配查询头数"""
         batch, num_key_value_heads, slen, head_dim = hidden_states.shape
         if n_rep == 1:
             return hidden_states
         hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_key_value_heads, n_rep, slen, head_dim)
         return hidden_states.reshape(batch, num_key_value_heads * n_rep, slen, head_dim)
-    
-    def _compute_scaled_dot_product_attention(self, query_states, key_states, value_states, attention_mask, bsz, q_len):
-        """计算缩放点积注意力"""
-        # 重复K、V以匹配查询头数
-        key_states = self._repeat_kv(key_states, self.num_key_value_groups)
-        value_states = self._repeat_kv(value_states, self.num_key_value_groups)
-        
-        # 计算attention权重 - 使用head_dim进行缩放
-        scaling = self.head_dim ** -0.5
-        attn_weights = torch.matmul(query_states, key_states.transpose(2, 3)) * scaling
-        
-        # 应用causal mask
-        if attention_mask is not None:
-            causal_mask = attention_mask[:, :, :, : key_states.shape[-2]]
-            attn_weights = attn_weights + causal_mask
-        
-        # Softmax和dropout
-        attn_weights = F.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
-        attn_weights = F.dropout(
-            attn_weights, 
-            p=0.0 if not self.training else self.attention_dropout, 
-            training=self.training
-        )
-        
-        # 计算最终的attention输出
-        attn_output = torch.matmul(attn_weights, value_states)
-        
-        return attn_output
 
 class Method1DecoderLayer_v3(LlamaDecoderLayer):
     def __init__(self, config, layer_idx: int):
@@ -211,21 +146,19 @@ class Method1DecoderLayer_v3(LlamaDecoderLayer):
             **kwargs,
         )
         
-        # 处理注意力模块的返回值（现在包含Q、K、W^V）
-        if len(attn_result) >= 6:
+        # 处理注意力模块的返回值（现在包含attn_weights和V权重）
+        if len(attn_result) >= 5:
             attn_output = attn_result[0]
             self_attn_weights = attn_result[1] if output_attentions else None
             present_key_value = attn_result[2] if use_cache else None
-            query_states = attn_result[3]
-            key_states = attn_result[4] 
-            v_proj_weight = attn_result[5]
+            stored_attn_weights = attn_result[3]  # 用于存储的注意力权重
+            v_proj_weight = attn_result[4]  # V投影权重
         else:
             # 回退到原始行为
             attn_output = attn_result[0] if isinstance(attn_result, tuple) else attn_result
             self_attn_weights = attn_result[1] if isinstance(attn_result, tuple) and len(attn_result) > 1 and output_attentions else None
             present_key_value = attn_result[2] if isinstance(attn_result, tuple) and len(attn_result) > 2 and use_cache else None
-            query_states = None
-            key_states = None
+            stored_attn_weights = None
             v_proj_weight = None
         
         # 注意力部分保持原始的残差连接
@@ -238,11 +171,10 @@ class Method1DecoderLayer_v3(LlamaDecoderLayer):
         
         # 存储当前层的权重信息
         current_weights = {
-            'query_states': query_states,
-            'key_states': key_states,
-            'v_proj_weight': v_proj_weight,
-            'mlp': self.mlp,
-            'post_attention_layernorm': self.post_attention_layernorm
+            'attn_weights': stored_attn_weights,  # 注意力权重矩阵
+            'v_proj_weight': v_proj_weight,       # V投影权重
+            'mlp': self.mlp,                      # MLP模块
+            'post_attention_layernorm': self.post_attention_layernorm  # 后注意力层归一化
         }
         
         if self.layer_idx == 0:
@@ -289,16 +221,16 @@ class Method1LlamaModel_v3(LlamaModel):
                                       cache_position: Optional[torch.LongTensor] = None) -> List[torch.Tensor]:
         """
         重新计算前面所有层的MLP输出，使用当前层的输入嵌入
-        充分利用stored_weights中已计算的Q、K矩阵和W^V权重
+        使用存储的attn_weights和V权重，大幅简化计算复杂度
         
         Args:
             current_input: 当前层的输入嵌入
             stored_weights: 存储的所有前面层的权重信息
             layer_idx: 当前层索引
-            position_embeddings: 位置嵌入
-            attention_mask: 注意力掩码
-            position_ids: 位置ID
-            cache_position: 缓存位置
+            position_embeddings: 位置嵌入（未使用，保持接口一致性）
+            attention_mask: 注意力掩码（未使用，attn_weights已经包含了掩码信息）
+            position_ids: 位置ID（未使用）
+            cache_position: 缓存位置（未使用）
             
         Returns:
             重新计算的前面所有层的MLP输出列表
@@ -309,25 +241,21 @@ class Method1LlamaModel_v3(LlamaModel):
             weights = stored_weights[i]
             layer = self.layers[i]
             
-            # 获取存储的Q、K矩阵和V权重
-            query_states = weights['query_states']
-            key_states = weights['key_states']
+            # 获取存储的注意力权重和V权重
+            attn_weights = weights['attn_weights']
             v_proj_weight = weights['v_proj_weight']
             
-            if v_proj_weight is None or query_states is None or key_states is None:
+            if v_proj_weight is None or attn_weights is None:
                 continue
                 
             # 对当前输入进行LayerNorm（第i层的input_layernorm）
             normalized_input = layer.input_layernorm(current_input)
             
-            # 使用预计算的Q、K和V权重的attention方法
-            attn_output = layer.self_attn.forward_with_precomputed_qkv(
+            # 使用简化的attention方法：预计算的attn_weights + 重新计算的V
+            attn_output = layer.self_attn.forward_with_precomputed_weights(
                 hidden_states=normalized_input,
-                precomputed_query_states=query_states,
-                precomputed_key_states=key_states,
+                attn_weights=attn_weights,
                 v_proj_weight=v_proj_weight,
-                attention_mask=attention_mask,
-                position_embeddings=position_embeddings,
             )
             
             # 进行attention部分的残差连接
@@ -373,7 +301,6 @@ class Method1LlamaModel_v3(LlamaModel):
             )
             use_cache = False
 
-        # TODO (joao): remove this exception in v4.56 -- it exists for users that try to pass a legacy cache
         if not isinstance(past_key_values, (type(None), Cache)):
             raise ValueError("The `past_key_values` should be either a `Cache` object or `None`.")
 
@@ -404,16 +331,12 @@ class Method1LlamaModel_v3(LlamaModel):
 
         # 存储所有层的权重信息和层输入
         stored_weights = []
-        layer_inputs = []
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
 
         for layer_idx, decoder_layer in enumerate(self.layers[: self.config.num_hidden_layers]):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
-
-            # 存储当前层的输入
-            layer_inputs.append(hidden_states.clone())
             
             # 重新计算前面层的MLP输出（使用当前层输入）
             if layer_idx > 0:
