@@ -27,7 +27,7 @@ class Method1LlamaAttention_v3(LlamaAttention):
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_value: Optional[Cache] = None,
-        output_attentions: bool = False,
+        output_attentions: bool = True,
         use_cache: bool = False,
         cache_position: Optional[torch.LongTensor] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
@@ -65,16 +65,24 @@ class Method1LlamaAttention_v3(LlamaAttention):
         hidden_states: torch.Tensor,
         attn_weights: torch.Tensor,
         v_proj_weight: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        cache_position: Optional[torch.LongTensor] = None,
+        apply_strict_causal_mask: bool = True,
         **kwargs,
     ) -> torch.Tensor:
         """
         使用预计算的注意力权重和V权重进行attention计算
-        只重新计算V矩阵（使用新的输入嵌入和存储的W^V权重）
+        现在包含严格的causal mask重新应用以防止信息泄漏
         
         Args:
             hidden_states: 输入的隐藏状态（当前层的输入）
             attn_weights: 预计算的注意力权重矩阵 (bsz, num_heads, q_len, k_len)
             v_proj_weight: 预计算的V投影权重
+            attention_mask: 注意力掩码，用于重新应用causal约束
+            position_ids: 位置ID（保持接口一致性）
+            cache_position: 缓存位置（保持接口一致性）
+            apply_strict_causal_mask: 是否启用严格的causal mask重新应用
             
         Returns:
             attention输出
@@ -86,7 +94,40 @@ class Method1LlamaAttention_v3(LlamaAttention):
         value_states = value_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
         value_states = self._repeat_kv(value_states, self.num_key_value_groups)
         
-        # 直接使用存储的注意力权重与新的V相乘
+        # 关键修复：重新应用causal mask以防止信息泄漏
+        if apply_strict_causal_mask and attention_mask is not None:
+            # 获取当前序列的mask
+            current_seq_len = hidden_states.shape[1]
+            target_len = attn_weights.shape[-1]
+            
+            # 确保维度匹配
+            if current_seq_len <= target_len:
+                # 裁剪mask到当前序列长度
+                causal_mask = attention_mask[:, :, :current_seq_len, :target_len]
+                
+                # 裁剪attention weights到匹配的维度
+                trimmed_attn_weights = attn_weights[:, :, :current_seq_len, :target_len]
+                
+                # 重新应用causal mask
+                masked_weights = trimmed_attn_weights + causal_mask
+                attn_weights_final = F.softmax(masked_weights, dim=-1, dtype=attn_weights.dtype)
+                
+                # 如果原始attn_weights更大，需要进行相应的裁剪
+                if attn_weights_final.shape != attn_weights.shape:
+                    # 用修正后的权重替换对应部分
+                    attn_weights = attn_weights.clone()
+                    attn_weights[:, :, :current_seq_len, :target_len] = attn_weights_final
+                else:
+                    attn_weights = attn_weights_final
+            else:
+                # 如果当前序列更长，这是一个错误情况，应该报警
+                warnings.warn(
+                    f"Current sequence length ({current_seq_len}) is longer than stored attention weights "
+                    f"({target_len}). This may cause information leakage.",
+                    UserWarning
+                )
+        
+        # 使用处理后的注意力权重与新的V相乘
         attn_output = torch.matmul(attn_weights, value_states)
         
         # Reshape并应用输出投影
@@ -222,15 +263,16 @@ class Method1LlamaModel_v3(LlamaModel):
         """
         重新计算前面所有层的MLP输出，使用当前层的输入嵌入
         使用存储的attn_weights和V权重，大幅简化计算复杂度
+        现在包含严格的causal mask验证以防止信息泄漏
         
         Args:
             current_input: 当前层的输入嵌入
             stored_weights: 存储的所有前面层的权重信息
             layer_idx: 当前层索引
             position_embeddings: 位置嵌入（未使用，保持接口一致性）
-            attention_mask: 注意力掩码（未使用，attn_weights已经包含了掩码信息）
-            position_ids: 位置ID（未使用）
-            cache_position: 缓存位置（未使用）
+            attention_mask: 注意力掩码（现在真正使用，用于causal约束）
+            position_ids: 位置ID（传递给attention方法）
+            cache_position: 缓存位置（传递给attention方法）
             
         Returns:
             重新计算的前面所有层的MLP输出列表
@@ -251,11 +293,15 @@ class Method1LlamaModel_v3(LlamaModel):
             # 对当前输入进行LayerNorm（第i层的input_layernorm）
             normalized_input = layer.input_layernorm(current_input)
             
-            # 使用简化的attention方法：预计算的attn_weights + 重新计算的V
+            # 关键修复：使用严格的causal mask约束
             attn_output = layer.self_attn.forward_with_precomputed_weights(
                 hidden_states=normalized_input,
                 attn_weights=attn_weights,
                 v_proj_weight=v_proj_weight,
+                attention_mask=attention_mask,  # 现在传递mask
+                position_ids=position_ids,
+                cache_position=cache_position,
+                apply_strict_causal_mask=True,  # 启用严格causal约束
             )
             
             # 进行attention部分的残差连接
