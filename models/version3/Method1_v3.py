@@ -16,7 +16,8 @@ from .configuration_llama_v3 import LlamaConfig, Method1Config_v3
 
 class Method1LlamaAttention_v3(LlamaAttention):
     """
-    简化版自定义Attention类，存储attn_weights和V权重来重新计算attention
+    简化版自定义Attention类，存储attn_weights、V权重、O权重和O偏置来重新计算attention
+    优化了多头注意力的重计算机制，避免重复计算输出投影，支持完整的权重和偏置保存复用
     """
     def __init__(self, config, layer_idx: Optional[int] = None):
         super().__init__(config, layer_idx)
@@ -56,15 +57,17 @@ class Method1LlamaAttention_v3(LlamaAttention):
             attn_weights = None
             past_key_value = None
         
-        # 返回attention输出、原始权重、past_key_value、注意力权重矩阵和V权重
+        # 返回attention输出、原始权重、past_key_value、注意力权重矩阵、V权重、O权重和O bias
         return (attn_output, attn_weights if output_attentions else None, past_key_value, 
-                attn_weights, self.v_proj.weight)
+                attn_weights, self.v_proj.weight, self.o_proj.weight, self.o_proj.bias)
     
     def forward_with_precomputed_weights(
         self,
         hidden_states: torch.Tensor,
         attn_weights: torch.Tensor,
         v_proj_weight: torch.Tensor,
+        o_proj_weight: torch.Tensor,  # 新增：输出投影权重
+        o_proj_bias: Optional[torch.Tensor] = None,  # 新增：输出投影偏置
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         cache_position: Optional[torch.LongTensor] = None,
@@ -72,13 +75,15 @@ class Method1LlamaAttention_v3(LlamaAttention):
         **kwargs,
     ) -> torch.Tensor:
         """
-        使用预计算的注意力权重和V权重进行attention计算
+        使用预计算的注意力权重、V权重、O权重和O bias进行attention计算
         现在包含严格的causal mask重新应用以防止信息泄漏
         
         Args:
             hidden_states: 输入的隐藏状态（当前层的输入）
             attn_weights: 预计算的注意力权重矩阵 (bsz, num_heads, q_len, k_len)
             v_proj_weight: 预计算的V投影权重
+            o_proj_weight: 预计算的O投影权重（输出投影）
+            o_proj_bias: 预计算的O投影偏置（输出投影bias）
             attention_mask: 注意力掩码，用于重新应用causal约束
             position_ids: 位置ID（保持接口一致性）
             cache_position: 缓存位置（保持接口一致性）
@@ -130,10 +135,10 @@ class Method1LlamaAttention_v3(LlamaAttention):
         # 使用处理后的注意力权重与新的V相乘
         attn_output = torch.matmul(attn_weights, value_states)
         
-        # Reshape并应用输出投影
+        # Reshape并应用预计算的输出投影（包含权重和偏置）
         attn_output = attn_output.transpose(1, 2).contiguous()
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)
-        attn_output = self.o_proj(attn_output)
+        attn_output = F.linear(attn_output, o_proj_weight, bias=o_proj_bias)
         
         return attn_output
     
@@ -187,13 +192,15 @@ class Method1DecoderLayer_v3(LlamaDecoderLayer):
             **kwargs,
         )
         
-        # 处理注意力模块的返回值（现在包含attn_weights和V权重）
-        if len(attn_result) >= 5:
+        # 处理注意力模块的返回值（现在包含attn_weights、V权重、O权重和O bias）
+        if len(attn_result) >= 7:
             attn_output = attn_result[0]
             self_attn_weights = attn_result[1] if output_attentions else None
             present_key_value = attn_result[2] if use_cache else None
             stored_attn_weights = attn_result[3]  # 用于存储的注意力权重
             v_proj_weight = attn_result[4]  # V投影权重
+            o_proj_weight = attn_result[5]  # O投影权重
+            o_proj_bias = attn_result[6]  # O投影偏置
         else:
             # 回退到原始行为
             attn_output = attn_result[0] if isinstance(attn_result, tuple) else attn_result
@@ -201,6 +208,8 @@ class Method1DecoderLayer_v3(LlamaDecoderLayer):
             present_key_value = attn_result[2] if isinstance(attn_result, tuple) and len(attn_result) > 2 and use_cache else None
             stored_attn_weights = None
             v_proj_weight = None
+            o_proj_weight = None
+            o_proj_bias = None
         
         # 注意力部分保持原始的残差连接
         hidden_states = residual + attn_output
@@ -214,6 +223,8 @@ class Method1DecoderLayer_v3(LlamaDecoderLayer):
         current_weights = {
             'attn_weights': stored_attn_weights,  # 注意力权重矩阵
             'v_proj_weight': v_proj_weight,       # V投影权重
+            'o_proj_weight': o_proj_weight,       # O投影权重
+            'o_proj_bias': o_proj_bias,           # O投影偏置（新增）
             'mlp': self.mlp,                      # MLP模块
             'post_attention_layernorm': self.post_attention_layernorm  # 后注意力层归一化
         }
@@ -262,12 +273,12 @@ class Method1LlamaModel_v3(LlamaModel):
                                       cache_position: Optional[torch.LongTensor] = None) -> List[torch.Tensor]:
         """
         重新计算前面所有层的MLP输出，使用当前层的输入嵌入
-        使用存储的attn_weights和V权重，大幅简化计算复杂度
+        使用存储的attn_weights、V权重、O权重和O bias，大幅简化计算复杂度
         现在包含严格的causal mask验证以防止信息泄漏
         
         Args:
             current_input: 当前层的输入嵌入
-            stored_weights: 存储的所有前面层的权重信息
+            stored_weights: 存储的所有前面层的权重信息（包含attn_weights, v_proj_weight, o_proj_weight, o_proj_bias）
             layer_idx: 当前层索引
             position_embeddings: 位置嵌入（未使用，保持接口一致性）
             attention_mask: 注意力掩码（现在真正使用，用于causal约束）
@@ -283,21 +294,25 @@ class Method1LlamaModel_v3(LlamaModel):
             weights = stored_weights[i]
             layer = self.layers[i]
             
-            # 获取存储的注意力权重和V权重
+            # 获取存储的注意力权重、V权重、O权重和O bias
             attn_weights = weights['attn_weights']
             v_proj_weight = weights['v_proj_weight']
+            o_proj_weight = weights['o_proj_weight']
+            o_proj_bias = weights['o_proj_bias']  # 新增：O投影偏置
             
-            if v_proj_weight is None or attn_weights is None:
+            if v_proj_weight is None or attn_weights is None or o_proj_weight is None:
                 continue
                 
             # 对当前输入进行LayerNorm（第i层的input_layernorm）
             normalized_input = layer.input_layernorm(current_input)
             
-            # 关键修复：使用严格的causal mask约束
+            # 🔥 关键修复：使用严格的causal mask约束，现在包含O权重和bias优化
             attn_output = layer.self_attn.forward_with_precomputed_weights(
                 hidden_states=normalized_input,
                 attn_weights=attn_weights,
                 v_proj_weight=v_proj_weight,
+                o_proj_weight=o_proj_weight,  # 传递O权重
+                o_proj_bias=o_proj_bias,      # 新增：传递O偏置
                 attention_mask=attention_mask,  # 现在传递mask
                 position_ids=position_ids,
                 cache_position=cache_position,

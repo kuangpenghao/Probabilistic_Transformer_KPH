@@ -77,14 +77,19 @@ def attach_tmux_session(session_name):
 
 if __name__ == "__main__":
 
-    '''    
+    '''
     sessions = list_tmux_sessions()
-
     print(sessions)
     '''
+
+    ''''''
     sessions=[
-        "base"
+        "v3m1-1",
+        "v3m1-2",
+        "v3m1-21",
+        "v3m1-22"
     ]
     
     for session in sessions:
         attach_tmux_session(session)
+    
