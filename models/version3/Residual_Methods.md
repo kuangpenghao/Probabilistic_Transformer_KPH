@@ -1,3 +1,41 @@
+# Method1
+Attention处残差连接与原始模型相同。修改MLP处的残差为先前层重算的MLP输出累加。先前层MLP输出的重算方法为：
+* 保留第一次Attention计算的attn_weights，$W^V$.weight$，$W^O$.weight，仅更换输入嵌入矩阵X
+* 输入嵌入X做input_norm
+* Attention重算
+* Attention残差连接
+* post_attn_layernorm
+* MLP计算
+* MLP计算结果不做残差连接直接输出，作为重算后的MLP输出
+
+# Method2
+MLP处残差连接与原始模型相同。修改Attention处的残差为先前层重算的Attention输出累加。先前层Attention输出的重算方法为：
+* 保留第一次Attention计算的attn_weights，$W^V$.weight，$W^O$.weight，仅更换输入嵌入矩阵X
+* 输入嵌入X做input_norm
+* Attention重算
+* Attention重算结果不做残差连接直接输出，作为重算后的Attention输出
+
+即：Method1_v3与Method2_v3的差别为：残差连接的修改位点不同，先前层输出重算的截止位置不同（截至MLP输出/截至Attention输出）
+
+# Method3
+与Method1基本相同，唯一不同之处在于MLP处残差和进行了归一化，且每一层的权重分布为1/m(method 3.1)或可学习权重(method3.2)
+
+# Method4
+与Method2基本相同，唯一不同之处在于Attention处残差和进行了归一化，且每一层的权重分布为1/m(method 4.1)或可学习权重(method4.2)
+
+# Method5
+相当于PT扩充多组Z node。直接将注意力得分计算由$Softmax(\dfrac{QK^T}{\sqrt{d_k}})$改成$Softmax(\dfrac{\sum QK^T}{d_s})$（$d_s$待定），即只需要记录之前层的$QK^T$矩阵再直接相加
+
+* Method5.1:$d_s=\sqrt{d_k}$
+* Method5.2:$d_s=\sqrt{d_k}·\sqrt{m}$(m为层数)
+* Method5.3:$d_s=\sqrt{d_k}·m$
+* Method5.4:$d_s=d_k^a·m^b$(a,b为可学习参数)
+* Method5.5:$d_s$为可学习的$\sqrt{d_k}*\vec{a}$向量，原先求和除以分母操作变为$QK^T$向量与$d_s$向量点乘
+
+---
+
+
+
 # Idea推导
 
 由论文中公式(27)( $G^{(t-1)}=2\sum_c{Q_{h,c}^{(t-1)}V_cU^{(c)T}}$ )可知：多组H node对Z node更新的消息量为$G=2\sum_n \sum_c {Q_{h,c}^{(t-1)}V_{n.c}U^{(c)T}}$。其中n为H node的组别，$V_c=Q_z^{(t-1)}V^{(c)}$

@@ -79,15 +79,18 @@ if __name__ == "__main__":
 
     '''
     sessions = list_tmux_sessions()
+    
     print(sessions)
+    '''
+
+    '''
+  
     '''
 
     ''''''
     sessions=[
-        "v3m1-1",
-        "v3m1-2",
-        "v3m1-21",
-        "v3m1-22"
+        "v3m1",
+        "v3m2"
     ]
     
     for session in sessions:
