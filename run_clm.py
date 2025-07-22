@@ -639,26 +639,78 @@ def main():
         trainer.save_metrics("train", metrics)
         trainer.save_state()
         
-        # 检查是否是Method3模型，如果是则保存可学习权重参数
+        # 检查是否是具有可学习权重的模型，如果是则保存可学习权重参数
         try:
-            # 检查模型是否有save_learned_parameters方法（Method3_v2特有）
-            if hasattr(model, 'save_learned_parameters'):
-                logger.info("检测到Method3_v2模型，正在保存可学习权重参数...")
-                save_path = model.save_learned_parameters(training_args.output_dir)
-                logger.info(f"可学习权重参数已保存到: {save_path}")
-            else:
-                # 检查是否是包装在trainer中的Method3模型
-                if hasattr(trainer.model, 'save_learned_parameters'):
-                    logger.info("检测到Method3_v2模型，正在保存可学习权重参数...")
-                    save_path = trainer.model.save_learned_parameters(training_args.output_dir)
-                    logger.info(f"可学习权重参数已保存到: {save_path}")
+            model_to_check = trainer.model if hasattr(trainer, 'model') else model
+            model_class_name = model_to_check.__class__.__name__
+            
+            # 检查是否有get_all_layer_weights方法（Method3_2_v3和Method4_2_v3特有）
+            if hasattr(model_to_check, 'get_all_layer_weights'):
+                logger.info(f"检测到具有可学习权重的模型 ({model_class_name})，正在保存可学习权重参数...")
+                
+                # 获取所有层的权重分布
+                layer_weights = model_to_check.get_all_layer_weights()
+                
+                # 保存权重到文件
+                import json
+                import numpy as np
+                weights_data = {}
+                
+                for layer_idx, weights in enumerate(layer_weights):
+                    if len(weights) > 0:  # 第0层没有权重，跳过空tensor
+                        weights_data[f"layer_{layer_idx}"] = weights.cpu().numpy().tolist()
+                
+                # 确定保存路径和文件名
+                if "Method3_2" in model_class_name:
+                    weights_file = os.path.join(training_args.output_dir, "method3_2_learned_weights.json")
+                    logger.info("保存Method3_2模型的MLP权重分布...")
+                elif "Method4_2" in model_class_name:
+                    weights_file = os.path.join(training_args.output_dir, "method4_2_learned_weights.json")
+                    logger.info("保存Method4_2模型的Attention权重分布...")
                 else:
-                    # 尝试检查模型类型
-                    model_class_name = model.__class__.__name__
-                    if "Method3" in model_class_name:
-                        logger.warning(f"检测到Method3相关模型 ({model_class_name})，但没有找到save_learned_parameters方法")
-                    else:
-                        logger.info(f"当前模型 ({model_class_name}) 不是Method3_v2模型，跳过权重参数保存")
+                    weights_file = os.path.join(training_args.output_dir, "learned_weights.json")
+                    logger.info(f"保存{model_class_name}模型的可学习权重分布...")
+                
+                # 保存权重数据
+                with open(weights_file, 'w') as f:
+                    json.dump(weights_data, f, indent=2)
+                
+                logger.info(f"可学习权重参数已保存到: {weights_file}")
+                
+                # 额外保存权重统计信息
+                stats_file = weights_file.replace('.json', '_stats.txt')
+                with open(stats_file, 'w') as f:
+                    f.write(f"Model: {model_class_name}\n")
+                    f.write(f"Total layers with weights: {len(weights_data)}\n")
+                    f.write("="*50 + "\n")
+                    
+                    for layer_idx, weights in enumerate(layer_weights):
+                        if len(weights) > 0:
+                            weights_np = weights.cpu().numpy()
+                            f.write(f"Layer {layer_idx}:\n")
+                            f.write(f"  Weights: {weights_np}\n")
+                            f.write(f"  Shape: {weights_np.shape}\n")
+                            f.write(f"  Mean: {weights_np.mean():.6f}\n")
+                            f.write(f"  Std: {weights_np.std():.6f}\n")
+                            f.write(f"  Min: {weights_np.min():.6f}\n")
+                            f.write(f"  Max: {weights_np.max():.6f}\n")
+                            f.write("-" * 30 + "\n")
+                
+                logger.info(f"权重统计信息已保存到: {stats_file}")
+                
+            # 检查是否有旧的save_learned_parameters方法（Method3_v2特有）
+            elif hasattr(model_to_check, 'save_learned_parameters'):
+                logger.info("检测到Method3_v2模型，正在保存可学习权重参数...")
+                save_path = model_to_check.save_learned_parameters(training_args.output_dir)
+                logger.info(f"可学习权重参数已保存到: {save_path}")
+                
+            else:
+                # 检查是否是相关模型但没有对应方法
+                if any(method in model_class_name for method in ["Method3", "Method4"]):
+                    logger.warning(f"检测到相关模型 ({model_class_name})，但没有找到权重保存方法")
+                else:
+                    logger.info(f"当前模型 ({model_class_name}) 不具有可学习权重，跳过权重参数保存")
+                    
         except Exception as e:
             logger.warning(f"保存可学习权重参数时出现错误: {e}")
             logger.info("继续执行其他保存操作...")

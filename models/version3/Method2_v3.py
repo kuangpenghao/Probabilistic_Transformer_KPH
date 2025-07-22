@@ -14,6 +14,39 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM, LlamaMode
 from .configuration_llama_v3 import LlamaConfig, Method2Config_v3
 
 
+class ModifiedResidualAttention:
+    """
+    封装修改后的Attention残差连接逻辑，便于在不同方法中复用和继承
+    """
+    def __init__(self, layer_idx: int):
+        self.layer_idx = layer_idx
+    
+    def compute_residual(self, previous_attn_outputs: Optional[List[torch.Tensor]], 
+                        residual: torch.Tensor, attn_output: torch.Tensor) -> torch.Tensor:
+        """
+        计算修改后的Attention残差连接
+        
+        Args:
+            previous_attn_outputs: 前面层的Attention输出列表
+            residual: 当前层的原始输入（attention前的输入）
+            attn_output: 当前层Attention的输出
+            
+        Returns:
+            最终的attention后输出
+        """
+        if self.layer_idx == 0:
+            # 第一层：使用标准残差连接
+            return residual + attn_output
+        else:
+            # 其他层：使用重新计算的Attention输出作为残差
+            if previous_attn_outputs is not None and len(previous_attn_outputs) > 0:
+                residual_sum = sum(previous_attn_outputs)
+                return residual_sum + attn_output
+            else:
+                # 如果没有提供之前的输出，回退到原始行为
+                return residual + attn_output
+
+
 class Method2LlamaAttention_v3(LlamaAttention):
     """
     Method2版本的自定义Attention类，存储attn_weights、V权重、O权重来重新计算attention
@@ -153,6 +186,8 @@ class Method2DecoderLayer_v3(LlamaDecoderLayer):
         self.layer_idx = layer_idx
         # 使用自定义的Attention类
         self.self_attn = Method2LlamaAttention_v3(config=config, layer_idx=layer_idx)
+        # 初始化修改后的Attention残差连接处理器
+        self.modified_residual_attn = ModifiedResidualAttention(layer_idx)
 
     def forward(
         self,
@@ -215,17 +250,10 @@ class Method2DecoderLayer_v3(LlamaDecoderLayer):
             'input_layernorm': self.input_layernorm  # 输入层归一化
         }
         
-        if self.layer_idx == 0:
-            # 第一层：直接使用Attention输出进行残差连接
-            hidden_states = residual + attn_output
-        else:
-            # 其他层：使用重新计算的Attention输出作为残差
-            if previous_attn_outputs is not None and len(previous_attn_outputs) > 0:
-                residual_sum = sum(previous_attn_outputs)
-                hidden_states = residual_sum + attn_output
-            else:
-                # 如果没有提供之前的输出，回退到原始行为
-                hidden_states = residual + attn_output
+        # 使用ModifiedResidualAttention处理残差连接
+        hidden_states = self.modified_residual_attn.compute_residual(
+            previous_attn_outputs, residual, attn_output
+        )
 
         # MLP部分保持原始的残差连接
         mlp_residual = hidden_states

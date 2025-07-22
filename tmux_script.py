@@ -89,9 +89,11 @@ if __name__ == "__main__":
 
     ''''''
     sessions=[
-        "v3m3-1"
+        "v3m3-2",
+        "v3m4-1",
+        "v3m4-2"
     ]
     
     for session in sessions:
-        create_tmux_session(session)
+        attach_tmux_session(session)
     
