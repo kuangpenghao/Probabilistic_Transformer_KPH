@@ -130,39 +130,6 @@ class Method2LlamaAttention_v3(LlamaAttention):
         value_states = value_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
         value_states = self._repeat_kv(value_states, self.num_key_value_groups)
         
-        # 关键修复：重新应用causal mask以防止信息泄漏
-        if apply_strict_causal_mask and attention_mask is not None:
-            # 获取当前序列的mask
-            current_seq_len = hidden_states.shape[1]
-            target_len = attn_weights.shape[-1]
-            
-            # 确保维度匹配
-            if current_seq_len <= target_len:
-                # 裁剪mask到当前序列长度
-                causal_mask = attention_mask[:, :, :current_seq_len, :target_len]
-                
-                # 裁剪attention weights到匹配的维度
-                trimmed_attn_weights = attn_weights[:, :, :current_seq_len, :target_len]
-                
-                # 重新应用causal mask
-                masked_weights = trimmed_attn_weights + causal_mask
-                attn_weights_final = F.softmax(masked_weights, dim=-1, dtype=attn_weights.dtype)
-                
-                # 如果原始attn_weights更大，需要进行相应的裁剪
-                if attn_weights_final.shape != attn_weights.shape:
-                    # 用修正后的权重替换对应部分
-                    attn_weights = attn_weights.clone()
-                    attn_weights[:, :, :current_seq_len, :target_len] = attn_weights_final
-                else:
-                    attn_weights = attn_weights_final
-            else:
-                # 如果当前序列更长，这是一个错误情况，应该报警
-                warnings.warn(
-                    f"Current sequence length ({current_seq_len}) is longer than stored attention weights "
-                    f"({target_len}). This may cause information leakage.",
-                    UserWarning
-                )
-        
         # 使用处理后的注意力权重与新的V相乘
         attn_output = torch.matmul(attn_weights, value_states)
         
