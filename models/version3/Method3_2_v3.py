@@ -24,20 +24,20 @@ from .configuration_llama_v3 import Method3_2Config_v3
 
 class Method3_2ModifiedResidualMLP(ModifiedResidualMLP):
     """
-    Method3_2版本的MLP残差连接：对前面层的MLP输出进行可学习加权求和
+    Method3_2版本的MLP残差连接：对前面层和当前层的MLP输出进行可学习加权求和
     """
     def __init__(self, layer_idx: int, num_hidden_layers: int):
         super().__init__(layer_idx)
         self.num_hidden_layers = num_hidden_layers
         
         if layer_idx > 0:
-            # 为前面的每一层创建可学习的权重参数
-            self.layer_weights = nn.Parameter(torch.ones(layer_idx))
+            # 为前面的每一层+当前层创建可学习的权重参数
+            self.layer_weights = nn.Parameter(torch.ones(layer_idx + 1))
     
     def compute_residual(self, previous_mlp_outputs: Optional[List[torch.Tensor]], 
                         mlp_input: torch.Tensor, mlp_output: torch.Tensor) -> torch.Tensor:
         """
-        计算Method3_2的MLP残差连接：对前面层输出进行可学习加权求和
+        计算Method3_2的MLP残差连接：对前面层和当前层输出一起进行可学习加权求和
         
         Args:
             previous_mlp_outputs: 前面层的MLP输出列表
@@ -51,14 +51,19 @@ class Method3_2ModifiedResidualMLP(ModifiedResidualMLP):
             # 第一层：使用标准残差连接
             return mlp_input + mlp_output
         else:
-            # 其他层：使用重新计算的MLP输出的可学习加权求和作为残差
+            # 其他层：将前面层输出和当前层输出一起做可学习加权求和，再加上残差输入
             if previous_mlp_outputs is not None and len(previous_mlp_outputs) > 0:
-                # 对权重进行softmax归一化
-                layer_weights_normalized = F.softmax(self.layer_weights[:len(previous_mlp_outputs)], dim=0)
+                # 将前面层输出和当前层输出合并
+                all_mlp_outputs = previous_mlp_outputs + [mlp_output]
                 
-                # 加权求和
-                residual_sum = sum(weight * output for weight, output in zip(layer_weights_normalized, previous_mlp_outputs))
-                return residual_sum + mlp_output
+                # 对权重进行softmax归一化
+                layer_weights_normalized = F.softmax(self.layer_weights[:len(all_mlp_outputs)], dim=0)
+                
+                # 对所有MLP输出进行加权求和
+                weighted_mlp_sum = sum(weight * output for weight, output in zip(layer_weights_normalized, all_mlp_outputs))
+                
+                # 加上残差输入
+                return mlp_input + weighted_mlp_sum
             else:
                 # 如果没有提供之前的输出，回退到原始行为
                 return mlp_input + mlp_output

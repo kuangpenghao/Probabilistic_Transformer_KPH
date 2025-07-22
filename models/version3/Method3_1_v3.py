@@ -43,7 +43,7 @@ class Method3_1ModifiedResidualMLP(ModifiedResidualMLP):
             # 其他层：使用重新计算的MLP输出的平均值作为残差
             if previous_mlp_outputs is not None and len(previous_mlp_outputs) > 0:
                 residual_sum = sum(previous_mlp_outputs)
-                return (residual_sum + mlp_output)/(len(previous_mlp_outputs) + 1)
+                return (residual_sum + mlp_output)/(len(previous_mlp_outputs) + 1)+mlp_input
             else:
                 # 如果没有提供之前的输出，回退到原始行为
                 return mlp_input + mlp_output

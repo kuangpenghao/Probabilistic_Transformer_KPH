@@ -45,8 +45,8 @@ class Method4_1ModifiedResidualAttention(ModifiedResidualAttention):
         else:
             # 其他层：使用重新计算的Attention输出的平均值进行归一化处理
             if previous_attn_outputs is not None and len(previous_attn_outputs) > 0:
-                residual_sum = sum(previous_attn_outputs) / len(previous_attn_outputs)  # 关键差异：除以层数做归一化
-                return (residual_sum + attn_output) / (len(previous_attn_outputs) + 1)  # 整体归一化
+                residual_sum = sum(previous_attn_outputs)
+                return (residual_sum + attn_output) / (len(previous_attn_outputs) + 1)+residual
             else:
                 # 如果没有提供之前的输出，回退到原始行为
                 return residual + attn_output
