@@ -25,3 +25,6 @@ class Method1Config_v3(LlamaConfig):
 
 class Method2Config_v3(LlamaConfig):
     model_type = "method2-v3"
+
+class Method3_1Config_v3(LlamaConfig):
+    model_type = "method3-1-v3"

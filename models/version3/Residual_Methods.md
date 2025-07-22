@@ -18,10 +18,10 @@ MLP处残差连接与原始模型相同。修改Attention处的残差为先前�
 即：Method1_v3与Method2_v3的差别为：残差连接的修改位点不同，先前层输出重算的截止位置不同（截至MLP输出/截至Attention输出）
 
 # Method3
-与Method1基本相同，唯一不同之处在于MLP处残差和进行了归一化，且每一层的权重分布为1/m(method 3.1)或可学习权重(method3.2)
+与Method1基本相同，唯一不同之处在于MLP处残差和进行了归一化，且每一层的权重分布为1/m(Method 3.1)或可学习权重(Method3.2)
 
 # Method4
-与Method2基本相同，唯一不同之处在于Attention处残差和进行了归一化，且每一层的权重分布为1/m(method 4.1)或可学习权重(method4.2)
+与Method2基本相同，唯一不同之处在于Attention处残差和进行了归一化，且每一层的权重分布为1/m(Method 4.1)或可学习权重(Method4.2)
 
 # Method5
 相当于PT扩充多组Z node。直接将注意力得分计算由$Softmax(\dfrac{QK^T}{\sqrt{d_k}})$改成$Softmax(\dfrac{\sum QK^T}{d_s})$（$d_s$待定），即只需要记录之前层的$QK^T$矩阵再直接相加
