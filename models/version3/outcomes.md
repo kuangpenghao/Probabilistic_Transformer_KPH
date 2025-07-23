@@ -27,7 +27,6 @@ MLP处残差连接与原始模型相同。修改Attention处的残差为先前�
 
 
 # Baseline
-
 ***** eval metrics *****
   epoch                   =        5.0
   eval_accuracy           =     0.4966
@@ -39,19 +38,51 @@ MLP处残差连接与原始模型相同。修改Attention处的残差为先前�
   eval_steps_per_second   =      4.653
 
 # Method1
-提前收敛，loss=4.8，acc=24%
+***** eval metrics *****
+  epoch                   =        5.0
+  eval_accuracy           =     0.4798
+  eval_loss               =     2.7268
+  eval_perplexity         =    15.2833
+  eval_runtime            = 0:00:06.43
+  eval_samples            =        143
+  eval_samples_per_second =     22.214
+  eval_steps_per_second   =      2.796
 
 # Method2
-提前收敛，loss=7.0，acc=4%
+***** eval metrics *****
+  epoch                   =        5.0
+  eval_accuracy           =     0.4791
+  eval_loss               =     2.7214
+  eval_perplexity         =    15.2012
+  eval_runtime            = 0:00:05.68
+  eval_samples            =        143
+  eval_samples_per_second =     25.148
+  eval_steps_per_second   =      3.166
 
 # Method3.1
-提前收敛，loss=7.1，acc=4%
+***** eval metrics *****
+  epoch                   =        5.0
+  eval_accuracy           =     0.5029
+  eval_loss               =     2.5252
+  eval_perplexity         =     12.494
+  eval_runtime            = 0:00:06.31
+  eval_samples            =        143
+  eval_samples_per_second =     22.637
+  eval_steps_per_second   =      2.849
 
 # Method3.2
-提前收敛，loss=7.1，acc=4%
+还未训练完
 
 # Method4.1
-提前收敛，loss=7.1，acc=4%
+***** eval metrics *****
+  epoch                   =        5.0
+  eval_accuracy           =     0.4979
+  eval_loss               =     2.5658
+  eval_perplexity         =    13.0107
+  eval_runtime            = 0:00:05.56
+  eval_samples            =        143
+  eval_samples_per_second =     25.714
+  eval_steps_per_second   =      3.237
 
 # Method4.2
-提前收敛，loss=7.1，acc=4%
+还未训练完

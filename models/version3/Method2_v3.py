@@ -14,11 +14,12 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM, LlamaMode
 from .configuration_llama_v3 import LlamaConfig, Method2Config_v3
 
 
-class ModifiedResidualAttention:
+class ModifiedResidualAttention(nn.Module):
     """
     封装修改后的Attention残差连接逻辑，便于在不同方法中复用和继承
     """
     def __init__(self, layer_idx: int):
+        super().__init__()
         self.layer_idx = layer_idx
     
     def compute_residual(self, previous_attn_outputs: Optional[List[torch.Tensor]], 
@@ -41,7 +42,7 @@ class ModifiedResidualAttention:
             # 其他层：使用重新计算的Attention输出作为残差
             if previous_attn_outputs is not None and len(previous_attn_outputs) > 0:
                 residual_sum = sum(previous_attn_outputs)
-                return residual_sum + attn_output
+                return residual_sum + attn_output + residual
             else:
                 # 如果没有提供之前的输出，回退到原始行为
                 return residual + attn_output
