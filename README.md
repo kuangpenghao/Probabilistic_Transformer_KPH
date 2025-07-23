@@ -36,3 +36,5 @@ tmux detach 或Ctrl+B,D//临时退出
 tmux ls
 tmux attach -t session_name//重新进入
 杀死会话：进入后exit或tmux kill-session -t session_named
+
+srun -N 1 -n 1 -X -u -p normal --gres=gpu:1 -c 2 --mem=1M -t 0-96:00:00 bash run_clm.sh

@@ -13,7 +13,7 @@ def list_tmux_sessions():
 
     if result.returncode != 0:
         error_msg = result.stderr.decode().strip()
-        print(f"❌ 无法获取会话列表: {error_msg}")
+        print(f" 无法获取会话列表: {error_msg}")
         return []
 
     # 解析每一行，只保留冒号前的会话名
@@ -39,10 +39,10 @@ def close_tmux_session(session_name):
     )
 
     if result.returncode == 0:
-        print(f"✅ 成功关闭会话 '{session_name}'")
+        print(f" 成功关闭会话 '{session_name}'")
     else:
         error_msg = result.stderr.decode().strip()
-        print(f"❌ 无法关闭会话 '{session_name}': {error_msg}")
+        print(f" 无法关闭会话 '{session_name}': {error_msg}")
 
 def create_tmux_session(session_name):
     """
@@ -57,10 +57,10 @@ def create_tmux_session(session_name):
     )
 
     if result.returncode == 0:
-        print(f"✅ 成功打开会话 '{session_name}'")
+        print(f" 成功打开会话 '{session_name}'")
     else:
         error_msg = result.stderr.decode().strip()
-        print(f"❌ 无法打开会话 '{session_name}': {error_msg}")
+        print(f" 无法打开会话 '{session_name}': {error_msg}")
 
 def attach_tmux_session(session_name):
     result = subprocess.run(
@@ -70,10 +70,10 @@ def attach_tmux_session(session_name):
     )
 
     if result.returncode == 0:
-        print(f"✅ 成功进入会话 '{session_name}'")
+        print(f" 成功进入会话 '{session_name}'")
     else:
         error_msg = result.stderr.decode().strip()
-        print(f"❌ 无法进入会话 '{session_name}': {error_msg}")
+        print(f" 无法进入会话 '{session_name}': {error_msg}")
 
 if __name__ == "__main__":
 
