@@ -317,9 +317,9 @@ def main():
     """
     # 配置三个列表：配置文件名、输出目录名、会话名
     # 根据测试结果调整为实际的会话名
-    configs_name = ["Version3_Method1","Version3_Method2","Version3_Method3_1", "Version3_Method3_2", "Version3_Method4_1", "Version3_Method4_2"]
-    output_dir_name = ["v3m1","v3m2","v3m3_1", "v3m3_2", "v3m4_1", "v3m4_2"]
-    sessions_name = ["v3m1","v3m2","v3m3-1", "v3m3-2", "v3m4-1", "v3m4-2"]
+    configs_name = ["Original_llama_llamatiny","Version2_Method1","Version2_Method3","Version3_Method1","Version3_Method3_1","Version3_Method3_2"]
+    output_dir_name = ["base","v2m1","v2m3","v3m1","v3m3_1","v3m3_2"]
+    sessions_name = ["base","v2m1","v2m3","v3m1","v3m3-1","v3m3-2"]
     
     print("自动化训练任务监控脚本启动")
     print(f"配置数量: {len(configs_name)}")

@@ -1,6 +1,6 @@
 # Method1
 Attention处残差连接与原始模型相同。修改MLP处的残差为先前层重算的MLP输出累加。先前层MLP输出的重算方法为：
-* 保留第一次Attention计算的attn_weights，$W^V$.weight$，$W^O$.weight，仅更换输入嵌入矩阵X
+* 保留第一次Attention计算的attn_weights，$W^V$.weight，$W^O$.weight，仅更换输入嵌入矩阵X
 * 输入嵌入X做input_norm
 * Attention重算
 * Attention残差连接
@@ -40,24 +40,24 @@ MLP处残差连接与原始模型相同。修改Attention处的残差为先前�
 # Method1
 ***** eval metrics *****
   epoch                   =        5.0
-  eval_accuracy           =     0.4798
-  eval_loss               =     2.7268
-  eval_perplexity         =    15.2833
-  eval_runtime            = 0:00:06.43
+  eval_accuracy           =     0.5025
+  eval_loss               =     2.5259
+  eval_perplexity         =    12.5021
+  eval_runtime            = 0:00:06.32
   eval_samples            =        143
-  eval_samples_per_second =     22.214
-  eval_steps_per_second   =      2.796
+  eval_samples_per_second =     22.595
+  eval_steps_per_second   =      2.844
 
 # Method2
 ***** eval metrics *****
   epoch                   =        5.0
-  eval_accuracy           =     0.4791
-  eval_loss               =     2.7214
-  eval_perplexity         =    15.2012
-  eval_runtime            = 0:00:05.68
+  eval_accuracy           =     0.4966
+  eval_loss               =     2.5748
+  eval_perplexity         =    13.1291
+  eval_runtime            = 0:00:05.53
   eval_samples            =        143
-  eval_samples_per_second =     25.148
-  eval_steps_per_second   =      3.166
+  eval_samples_per_second =     25.826
+  eval_steps_per_second   =      3.251
 
 # Method3.1
 ***** eval metrics *****
@@ -71,7 +71,15 @@ MLP处残差连接与原始模型相同。修改Attention处的残差为先前�
   eval_steps_per_second   =      2.849
 
 # Method3.2
-还未训练完
+***** eval metrics *****
+  epoch                   =        5.0
+  eval_accuracy           =     0.5032
+  eval_loss               =     2.5262
+  eval_perplexity         =    12.5057
+  eval_runtime            = 0:00:06.32
+  eval_samples            =        143
+  eval_samples_per_second =      22.61
+  eval_steps_per_second   =      2.846
 
 # Method4.1
 ***** eval metrics *****
@@ -85,4 +93,12 @@ MLP处残差连接与原始模型相同。修改Attention处的残差为先前�
   eval_steps_per_second   =      3.237
 
 # Method4.2
-还未训练完
+***** eval metrics *****
+  epoch                   =        5.0
+  eval_accuracy           =     0.4985
+  eval_loss               =     2.5606
+  eval_perplexity         =    12.9437
+  eval_runtime            = 0:00:05.58
+  eval_samples            =        143
+  eval_samples_per_second =     25.621
+  eval_steps_per_second   =      3.225
