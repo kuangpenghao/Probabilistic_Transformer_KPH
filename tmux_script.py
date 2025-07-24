@@ -90,7 +90,12 @@ if __name__ == "__main__":
         "v2m3",
         "v3m1",
         "v3m3-1",
-        "v3m3-2"
+        "v3m3-2",
+        "test1",
+        "test2",
+        "test3",
+        "test4",
+        "test5"
     ]
     
     for session in sessions:

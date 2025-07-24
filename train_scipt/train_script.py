@@ -3,6 +3,37 @@ import time
 import os
 import shutil
 from typing import List, Tuple, Optional
+from datetime import datetime
+
+def log_training_submission(session_name: str, config_name: str, output_dir_name: str, success: bool, log_path: str = "log.txt") -> None:
+    """
+    记录训练任务提交日志
+    :param session_name: tmux会话名
+    :param config_name: 配置文件名
+    :param output_dir_name: 输出目录名
+    :param success: 提交是否成功
+    :param log_path: 日志文件路径
+    """
+    try:
+        # 获取当前时间
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # 构建日志条目
+        status = "成功" if success else "失败"
+        log_entry = f"[{current_time}] 重新提交任务 - 会话: {session_name}, 配置: {config_name}, 输出目录: {output_dir_name}, 状态: {status}\n"
+        
+        # 追加写入日志文件
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        full_log_path = os.path.join(script_dir, log_path)
+        
+        with open(full_log_path, 'a', encoding='utf-8') as f:
+            f.write(log_entry)
+        
+        print(f" 日志已记录到: {full_log_path}")
+        
+    except Exception as e:
+        print(f" 记录日志时出错: {e}")
+
 
 def list_tmux_sessions():
     """
@@ -188,11 +219,13 @@ def verify_script_modification(script_path: str, expected_config: str, expected_
         return False
 
 
-def submit_training_job(session_name: str, script_path: str) -> bool:
+def submit_training_job(session_name: str, script_path: str, config_name: str, output_dir_name: str) -> bool:
     """
     在指定的tmux会话中提交训练任务
     :param session_name: tmux会话名
     :param script_path: 训练脚本路径
+    :param config_name: 配置文件名
+    :param output_dir_name: 输出目录名
     :return: True表示提交成功，False表示失败
     """
     try:
@@ -206,7 +239,12 @@ def submit_training_job(session_name: str, script_path: str) -> bool:
             stderr=subprocess.PIPE
         )
         
-        if result.returncode == 0:
+        success = result.returncode == 0
+        
+        # 记录日志
+        log_training_submission(session_name, config_name, output_dir_name, success)
+        
+        if success:
             print(f" 成功向会话 {session_name} 提交训练任务")
             return True
         else:
@@ -215,6 +253,8 @@ def submit_training_job(session_name: str, script_path: str) -> bool:
             
     except Exception as e:
         print(f" 提交任务时出错: {e}")
+        # 记录失败日志
+        log_training_submission(session_name, config_name, output_dir_name, False)
         return False
 
 
@@ -252,7 +292,7 @@ def process_single_session(session_name: str, config_name: str, output_dir_name:
         
         # 提交训练任务
         script_path = "run_clm.sh"  # 使用原始脚本文件
-        success = submit_training_job(session_name, script_path)
+        success = submit_training_job(session_name, script_path, config_name, output_dir_name)
         
         if success:
             print(f" 会话 {session_name} 训练任务已重新提交")
@@ -317,9 +357,9 @@ def main():
     """
     # 配置三个列表：配置文件名、输出目录名、会话名
     # 根据测试结果调整为实际的会话名
-    configs_name = ["Original_llama_llamatiny","Version2_Method1","Version2_Method3","Version3_Method1","Version3_Method3_1","Version3_Method3_2"]
-    output_dir_name = ["base","v2m1","v2m3","v3m1","v3m3_1","v3m3_2"]
-    sessions_name = ["base","v2m1","v2m3","v3m1","v3m3-1","v3m3-2"]
+    configs_name = ["Original_llama_llamatiny","Version2_Method1","Version2_Method3","Version3_Method1","Version3_Method3_1","Version3_Method3_2","Method1","Method2","Method3","Method4","Method5"]
+    output_dir_name = ["base","v2m1","v2m3","v3m1","v3m3_1","v3m3_2","test1","test2","test3","test4","test5"]
+    sessions_name = ["base","v2m1","v2m3","v3m1","v3m3-1","v3m3-2","test1","test2","test3","test4","test5"]
     
     print("自动化训练任务监控脚本启动")
     print(f"配置数量: {len(configs_name)}")

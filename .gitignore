@@ -4,3 +4,4 @@ outputs
 #*.sh
 prompts.md
 run_clm.sh.backup
+train_scipt/log.txt
