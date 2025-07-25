@@ -108,13 +108,97 @@ def check_training_completed(output_dir: str) -> bool:
     return False
 
 
+def create_temporary_training_script(config_name: str, output_dir_name: str, session_name: str) -> str:
+    """
+    创建临时训练脚本文件，基于原始run_clm.sh修改配置参数
+    :param config_name: 配置文件名
+    :param output_dir_name: 输出目录名
+    :param session_name: 会话名（用于临时文件命名）
+    :return: 临时脚本文件路径，失败时返回空字符串
+    """
+    original_script = "run_clm.sh"
+    temp_script = f"run_clm_{session_name}_temp.sh"
+    
+    try:
+        # 1. 检查原始脚本是否存在
+        if not os.path.exists(original_script):
+            print(f"   原始脚本 {original_script} 不存在")
+            return ""
+        
+        # 2. 读取原始脚本
+        with open(original_script, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 3. 替换配置文件和输出目录
+        lines = content.split('\n')
+        config_modified = False
+        output_modified = False
+        
+        for i, line in enumerate(lines):
+            if line.strip().startswith('--config_name'):
+                lines[i] = f"    --config_name configs/{config_name}.json \\"
+                config_modified = True
+                print(f"    修改config_name: configs/{config_name}.json")
+            elif line.strip().startswith('--output_dir'):
+                lines[i] = f"    --output_dir outputs/{output_dir_name} \\"
+                output_modified = True
+                print(f"    修改output_dir: outputs/{output_dir_name}")
+        
+        # 4. 写入临时脚本文件
+        modified_content = '\n'.join(lines)
+        with open(temp_script, 'w', encoding='utf-8') as f:
+            f.write(modified_content)
+        
+        # 5. 设置执行权限
+        os.chmod(temp_script, 0o755)
+        
+        # 6. 验证修改是否正确
+        print(f"    开始验证临时脚本...")
+        verification_success = verify_script_modification(temp_script, config_name, output_dir_name)
+        
+        if verification_success and config_modified and output_modified:
+            print(f"    临时脚本创建成功: {temp_script}")
+            return temp_script
+        else:
+            # 如果验证失败，删除临时文件
+            if os.path.exists(temp_script):
+                os.remove(temp_script)
+            print(f"     临时脚本验证失败，已删除")
+            return ""
+            
+    except Exception as e:
+        # 如果出现异常，尝试删除临时文件
+        try:
+            if os.path.exists(temp_script):
+                os.remove(temp_script)
+        except:
+            pass
+        print(f"     创建临时脚本时出错: {e}")
+        return ""
+
+
+def cleanup_temporary_script(script_path: str) -> None:
+    """
+    清理临时脚本文件
+    :param script_path: 临时脚本文件路径
+    """
+    try:
+        if os.path.exists(script_path) and script_path.endswith("_temp.sh"):
+            os.remove(script_path)
+            print(f"    已清理临时脚本: {script_path}")
+    except Exception as e:
+        print(f"    清理临时脚本时出错: {e}")
+
+
 def modify_training_script(config_name: str, output_dir_name: str) -> bool:
     """
     就地修改run_clm.sh脚本的配置参数
+    ⚠️ 已弃用：请使用 create_temporary_training_script 代替
     :param config_name: 配置文件名
     :param output_dir_name: 输出目录名
     :return: True表示修改成功，False表示失败
     """
+    print("⚠️ 警告：modify_training_script 函数已弃用，建议使用 create_temporary_training_script")
     script_path = "run_clm.sh"
     backup_path = "run_clm.sh.backup"
     
@@ -286,13 +370,15 @@ def process_single_session(session_name: str, config_name: str, output_dir_name:
     
     print(f"会话 {session_name} 需要重新启动训练")
     
-    # 修改训练脚本
-    if modify_training_script(config_name, output_dir_name):
-        print(f" 已成功修改训练脚本配置")
-        
+    # 创建临时训练脚本
+    temp_script_path = create_temporary_training_script(config_name, output_dir_name, session_name)
+    if not temp_script_path:
+        print(f"   创建临时训练脚本失败，跳过任务提交")
+        return False
+    
+    try:
         # 提交训练任务
-        script_path = "run_clm.sh"  # 使用原始脚本文件
-        success = submit_training_job(session_name, script_path, config_name, output_dir_name)
+        success = submit_training_job(session_name, temp_script_path, config_name, output_dir_name)
         
         if success:
             print(f" 会话 {session_name} 训练任务已重新提交")
@@ -300,9 +386,11 @@ def process_single_session(session_name: str, config_name: str, output_dir_name:
             print(f" 会话 {session_name} 训练任务提交失败")
         
         return success
-    else:
-        print(f" 修改训练脚本失败，跳过任务提交")
-        return False
+        
+    finally:
+        # 无论成功还是失败，都要清理临时脚本
+        time.sleep(30)
+        cleanup_temporary_script(temp_script_path)
 
 
 def run_monitoring_cycle(configs_name: List[str], output_dir_name: List[str], sessions_name: List[str]) -> None:
@@ -357,9 +445,51 @@ def main():
     """
     # 配置三个列表：配置文件名、输出目录名、会话名
     # 根据测试结果调整为实际的会话名
-    configs_name = ["Original_llama_llamatiny","Version2_Method1","Version2_Method3","Version3_Method1","Version3_Method3_1","Version3_Method3_2","Method1","Method2","Method3","Method4","Method5"]
-    output_dir_name = ["base","v2m1","v2m3","v3m1","v3m3_1","v3m3_2","test1","test2","test3","test4","test5"]
-    sessions_name = ["base","v2m1","v2m3","v3m1","v3m3-1","v3m3-2","test1","test2","test3","test4","test5"]
+    configs_name = [
+        "Original_llama_llamatiny",
+        "Version2_Method1",
+        "Version2_Method3",
+        "Version3_Method1",
+        "Version3_Method3_1",
+        "Version3_Method3_2",
+        "Version4_Method1",
+        "Version4_Method2",
+        "Version4_Method3",
+        "Version4_Method4",
+        "Version4_Method5",
+        "Version4_Method6",
+        "Version4_Method7"
+    ]
+    output_dir_name = [
+        "base_2",
+        "v2m1",
+        "v2m3",
+        "v3m1",
+        "v3m3_1",
+        "v3m3_2",
+        "v4m1",
+        "v4m2",
+        "v4m3",
+        "v4m4",
+        "v4m5",
+        "v4m6",
+        "v4m7"
+    ]
+    sessions_name = [
+        "base",
+        "v2m1",
+        "v2m3",
+        "v3m1",
+        "v3m3-1",
+        "v3m3-2",
+        "v4m1",
+        "v4m2",
+        "v4m3",
+        "v4m4",
+        "v4m5",
+        "v4m6",
+        "v4m7"
+    ]
     
     print("自动化训练任务监控脚本启动")
     print(f"配置数量: {len(configs_name)}")
