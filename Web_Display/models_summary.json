@@ -1,62 +1,62 @@
 {
-  "timestamp": "2025-07-26T22:17:40.855599",
+  "timestamp": "2025-07-26T22:19:31.155889",
   "total_models": 6,
   "models": [
     {
       "model_name": "base",
       "model_state": "Training",
       "training_state": {
-        "epoch": 0.4999264813997941,
-        "eval_accuracy": 0.42531967299920403,
-        "eval_loss": 3.154733896255493,
-        "eval_runtime": 3.8507,
-        "eval_samples_per_second": 37.136,
-        "eval_steps_per_second": 4.674,
-        "step": 17000
+        "epoch": 0.5234524334656668,
+        "eval_accuracy": 0.4264982696834187,
+        "eval_loss": 3.1416268348693848,
+        "eval_runtime": 3.8521,
+        "eval_samples_per_second": 37.122,
+        "eval_steps_per_second": 4.673,
+        "step": 17800
       },
-      "training_rate": "9%"
+      "training_rate": "10%"
     },
     {
       "model_name": "v4m1",
       "model_state": "Training",
       "training_state": {
-        "epoch": 0.34112630495515367,
-        "eval_accuracy": 0.4152623146272389,
-        "eval_loss": 3.2655491828918457,
-        "eval_runtime": 5.8895,
-        "eval_samples_per_second": 24.281,
-        "eval_steps_per_second": 3.056,
-        "step": 11600
+        "epoch": 0.3587707690045582,
+        "eval_accuracy": 0.4168474417619508,
+        "eval_loss": 3.2542269229888916,
+        "eval_runtime": 5.8876,
+        "eval_samples_per_second": 24.288,
+        "eval_steps_per_second": 3.057,
+        "step": 12200
       },
-      "training_rate": "6%"
+      "training_rate": "7%"
     },
     {
       "model_name": "v4m4",
       "model_state": "Training",
       "training_state": {
-        "epoch": 0.2999558888398765,
-        "eval_accuracy": 0.4019424639844767,
-        "eval_loss": 3.3979275226593018,
-        "eval_runtime": 5.8988,
-        "eval_samples_per_second": 24.242,
-        "eval_steps_per_second": 3.051,
-        "step": 10200
+        "epoch": 0.317600352889281,
+        "eval_accuracy": 0.40401269468196677,
+        "eval_loss": 3.3750715255737305,
+        "eval_runtime": 6.1641,
+        "eval_samples_per_second": 23.199,
+        "eval_steps_per_second": 2.92,
+        "step": 10800
       },
-      "training_rate": "5%"
+      "training_rate": "6%"
     },
     {
       "model_name": "v4m6",
       "model_state": "Training",
       "training_state": {
-        "epoch": 0.28819291280694015,
-        "eval_accuracy": 0.39747062902900715,
-        "eval_loss": 3.4280693531036377,
-        "eval_runtime": 5.9208,
-        "eval_samples_per_second": 24.152,
-        "eval_steps_per_second": 3.04,
-        "step": 9800
+        "epoch": 0.30583737685634466,
+        "eval_accuracy": 0.39997813617745226,
+        "eval_loss": 3.406376838684082,
+        "eval_runtime": 5.9086,
+        "eval_samples_per_second": 24.202,
+        "eval_steps_per_second": 3.046,
+        "step": 10400
       },
-      "training_rate": "5%"
+      "training_rate": "6%"
     },
     {
       "model_name": "v4m7",
