@@ -24,9 +24,9 @@ class v4m6_ModifiedScailingComputation(nn.Module):
         self.head_dim = head_dim
         self.layer_idx = layer_idx
         
-        # 初始化可学习参数向量：a_i需要为正值，b_i正负性随意
+        # 初始化可学习参数向量：a_i，b_i正负性随意
         vector_length = layer_idx + 1
-        self.log_a_params = nn.Parameter(torch.zeros(vector_length))  # 使用log确保a_i为正值
+        self.a_params = nn.Parameter(torch.ones(vector_length)) 
         self.b_params = nn.Parameter(torch.ones(vector_length) * 0.5)  # b_i正负性随意
     
     def compute_modified_scaling(self, qk_matrices: List[torch.Tensor], layer_idx: int) -> torch.Tensor:
@@ -46,7 +46,7 @@ class v4m6_ModifiedScailingComputation(nn.Module):
         
         for i in range(num_matrices):
             # 每层都有自己的参数向量，长度等于层索引+1
-            a_i = torch.exp(self.log_a_params[i])  # 确保a_i为正值
+            a_i = self.a_params[i]
             b_i = self.b_params[i]  # b_i正负性随意
             
             # 计算1/(a_i * d_k^{b_i})

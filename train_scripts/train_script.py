@@ -465,7 +465,7 @@ def main():
         "Version4_Method7"
     ]
     output_dir_name = [
-        "base_2",
+        "base",
         "v2m1",
         "v2m3",
         "v3m1",

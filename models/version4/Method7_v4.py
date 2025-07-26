@@ -27,7 +27,7 @@ class v4m7_ModifiedScailingComputation(nn.Module):
         # 初始化可学习参数向量a_i，长度为layer_idx+1，需要保证为正值
         # a_0应该初始化为sqrt(head_dim)，使得1/a_0 = 1/sqrt(head_dim)匹配原始缩放
         vector_length = layer_idx + 1
-        self.log_a_params = nn.Parameter(torch.log(torch.ones(vector_length) * math.sqrt(head_dim)))  # 使用log确保正值
+        self.a_params = nn.Parameter(torch.ones(vector_length) * math.sqrt(head_dim))  # 使用log确保正值
     
     def compute_modified_scaling(self, qk_matrices: List[torch.Tensor], layer_idx: int) -> torch.Tensor:
         """
@@ -46,7 +46,7 @@ class v4m7_ModifiedScailingComputation(nn.Module):
         
         for i in range(num_matrices):
             # 每层都有自己的参数向量，长度等于层索引+1
-            a_i = torch.exp(self.log_a_params[i])  # 确保a_i为正值
+            a_i = self.a_params[i]  # 确保a_i为正值
             
             # 计算1/a_i
             scaling_vector[i] = 1.0 / a_i

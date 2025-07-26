@@ -5,3 +5,5 @@ outputs
 prompts.md
 run_clm.sh.backup
 train_scipt/log.txt
+Web_Display/*.json
+Web_Display/*.log

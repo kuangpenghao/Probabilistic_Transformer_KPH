@@ -24,9 +24,9 @@ class v4m5_ModifiedScailingComputation(nn.Module):
         self.head_dim = head_dim
         self.layer_idx = layer_idx
         
-        # 初始化可学习参数向量a_i，长度为layer_idx+1，需要保证为正值
+        # 初始化可学习参数向量a_i，长度为layer_idx+1
         vector_length = layer_idx + 1
-        self.log_a_params = nn.Parameter(torch.zeros(vector_length))  # 使用log确保正值
+        self.a_params = nn.Parameter(torch.ones(vector_length))  # 使用log确保正值
     
     def compute_modified_scaling(self, qk_matrices: List[torch.Tensor], layer_idx: int) -> torch.Tensor:
         """
@@ -39,13 +39,13 @@ class v4m5_ModifiedScailingComputation(nn.Module):
         Returns:
             修改后的注意力权重
         """
-        # 构建缩放向量，每一项为1/(a_i*sqrt(d_k))的倒数，a_i需要是正值
+        # 构建缩放向量，每一项为1/(a_i*sqrt(d_k))的倒数
         num_matrices = len(qk_matrices)
         scaling_vector = torch.zeros(num_matrices, device=qk_matrices[0].device, dtype=qk_matrices[0].dtype)
         
         for i in range(num_matrices):
             # 每层都有自己的参数向量，长度等于层索引+1
-            a_i = torch.exp(self.log_a_params[i])  # 确保a_i为正值
+            a_i = self.a_params[i]
             
             # 计算1/(a_i*sqrt(d_k))
             scaling_vector[i] = 1.0 / (a_i * math.sqrt(self.head_dim))

@@ -1,60 +1,52 @@
 {
-  "timestamp": "2025-07-26T22:20:11.239239",
+  "timestamp": "2025-07-26T22:24:42.002456",
   "total_models": 6,
   "models": [
     {
       "model_name": "base",
       "model_state": "Training",
       "training_state": {
-        "epoch": 0.5352154094986031,
-        "eval_accuracy": 0.4269389623566468,
-        "eval_loss": 3.138929605484009,
-        "eval_runtime": 3.8489,
-        "eval_samples_per_second": 37.153,
-        "eval_steps_per_second": 4.677,
-        "step": 18200
+        "epoch": 0.5940302896632849,
+        "eval_accuracy": 0.4307548826356838,
+        "eval_loss": 3.098527431488037,
+        "eval_runtime": 3.8556,
+        "eval_samples_per_second": 37.089,
+        "eval_steps_per_second": 4.669,
+        "step": 20200
       },
-      "training_rate": "10%"
+      "training_rate": "11%"
     },
     {
       "model_name": "v4m1",
       "model_state": "Training",
-      "training_state": {
-        "epoch": 0.3646522570210263,
-        "eval_accuracy": 0.4188220182357945,
-        "eval_loss": 3.2375547885894775,
-        "eval_runtime": 6.2069,
-        "eval_samples_per_second": 23.039,
-        "eval_steps_per_second": 2.9,
-        "step": 12400
-      },
-      "training_rate": "7%"
+      "training_state": {},
+      "training_rate": "0%"
     },
     {
       "model_name": "v4m4",
       "model_state": "Training",
       "training_state": {
-        "epoch": 0.32348184090574916,
-        "eval_accuracy": 0.40528694558982786,
-        "eval_loss": 3.3607311248779297,
-        "eval_runtime": 6.9473,
-        "eval_samples_per_second": 20.583,
-        "eval_steps_per_second": 2.591,
-        "step": 11000
+        "epoch": 0.3587707690045582,
+        "eval_accuracy": 0.40887397897656813,
+        "eval_loss": 3.328664779663086,
+        "eval_runtime": 6.2281,
+        "eval_samples_per_second": 22.96,
+        "eval_steps_per_second": 2.89,
+        "step": 12200
       },
-      "training_rate": "6%"
+      "training_rate": "7%"
     },
     {
       "model_name": "v4m6",
       "model_state": "Training",
       "training_state": {
-        "epoch": 0.3117188648728128,
-        "eval_accuracy": 0.40084927285708916,
-        "eval_loss": 3.4015870094299316,
-        "eval_runtime": 6.5287,
-        "eval_samples_per_second": 21.903,
-        "eval_steps_per_second": 2.757,
-        "step": 10600
+        "epoch": 0.3470077929716218,
+        "eval_accuracy": 0.4074152520659604,
+        "eval_loss": 3.3404693603515625,
+        "eval_runtime": 5.9168,
+        "eval_samples_per_second": 24.168,
+        "eval_steps_per_second": 3.042,
+        "step": 11800
       },
       "training_rate": "6%"
     },
