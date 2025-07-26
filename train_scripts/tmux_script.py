@@ -77,13 +77,13 @@ def attach_tmux_session(session_name):
 
 if __name__ == "__main__":
 
-    '''
-    sessions = list_tmux_sessions()
     
+    sessions = list_tmux_sessions()
+    '''
     print(sessions)
     '''
 
-    ''''''
+    '''
     sessions=[
         "base",
         "v2m1",
@@ -97,9 +97,13 @@ if __name__ == "__main__":
         "v4m4",
         "v4m5",
         "v4m6",
-        "v4m7"
+        "v4m7",
+        "v4m4-2",
+        "v4m5-2",
+        "v4m6-2", 
+        "v4m7-2"
     ]
-    
+    '''
     for session in sessions:
-        attach_tmux_session(session)
-    
+        close_tmux_session(session)
+# /home/kuangph/.conda/envs/pt/bin/python -u "/home/kuangph/hf-starter/train_scripts/tmux_script.py"

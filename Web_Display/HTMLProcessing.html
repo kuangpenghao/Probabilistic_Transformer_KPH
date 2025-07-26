@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型训练状态监控</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .status-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .status-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            flex: 1;
+            margin: 0 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-card h3 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .status-card p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .model-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .model-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .model-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-completed {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-training {
+            background: #ff9800;
+            color: white;
+        }
+
+        .progress-container {
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff9800, #ffc107);
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .metrics {
+            margin-top: 15px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .metric-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .metric-value {
+            color: #333;
+        }
+
+        .last-update {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .refresh-active {
+            background-color: #4caf50;
+            animation: pulse 1s infinite;
+        }
+
+        .refresh-inactive {
+            background-color: #ccc;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        .error-message {
+            background: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .models-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .status-card {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>模型训练状态监控系统</h1>
+            <p id="current-time"></p>
+        </div>
+
+        <div class="status-info">
+            <div class="status-card">
+                <h3 id="total-models">-</h3>
+                <p>总模型数</p>
+            </div>
+            <div class="status-card">
+                <h3 id="completed-models">-</h3>
+                <p>已完成训练</p>
+            </div>
+            <div class="status-card">
+                <h3 id="training-models">-</h3>
+                <p>正在训练</p>
+            </div>
+        </div>
+
+        <div id="error-container"></div>
+        
+        <div class="models-grid" id="models-container">
+            <!-- 模型卡片将通过JavaScript动态生成 -->
+        </div>
+
+        <div class="last-update">
+            <span class="refresh-indicator" id="refresh-indicator"></span>
+            最后更新: <span id="last-update-time">-</span>
+        </div>
+    </div>
+
+    <script>
+        class ModelMonitor {
+            constructor() {
+                this.refreshInterval = 5000; // 5秒更新一次
+                this.lastUpdateTime = null;
+                this.isRefreshing = false;
+                
+                this.init();
+            }
+
+            init() {
+                this.updateCurrentTime();
+                this.loadData();
+                
+                // 设置定期更新
+                setInterval(() => this.loadData(), this.refreshInterval);
+                
+                // 更新当前时间
+                setInterval(() => this.updateCurrentTime(), 1000);
+            }
+
+            updateCurrentTime() {
+                const now = new Date();
+                document.getElementById('current-time').textContent = 
+                    now.toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+            }
+
+            async loadData() {
+                this.setRefreshStatus(true);
+                
+                try {
+                    const response = await fetch('/models_summary.json?t=' + Date.now());
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    this.renderData(data);
+                    this.clearError();
+                    
+                } catch (error) {
+                    console.error('加载数据失败:', error);
+                    this.showError('无法加载模型数据: ' + error.message);
+                } finally {
+                    this.setRefreshStatus(false);
+                }
+            }
+
+            setRefreshStatus(isRefreshing) {
+                this.isRefreshing = isRefreshing;
+                const indicator = document.getElementById('refresh-indicator');
+                
+                if (isRefreshing) {
+                    indicator.className = 'refresh-indicator refresh-active';
+                } else {
+                    indicator.className = 'refresh-indicator refresh-inactive';
+                }
+            }
+
+            renderData(data) {
+                // 更新统计信息
+                document.getElementById('total-models').textContent = data.total_models || 0;
+                
+                const completedCount = data.models ? 
+                    data.models.filter(model => model.model_state === 'Completed').length : 0;
+                const trainingCount = (data.total_models || 0) - completedCount;
+                
+                document.getElementById('completed-models').textContent = completedCount;
+                document.getElementById('training-models').textContent = trainingCount;
+
+                // 更新最后更新时间
+                if (data.timestamp) {
+                    const updateTime = new Date(data.timestamp);
+                    document.getElementById('last-update-time').textContent = 
+                        updateTime.toLocaleString('zh-CN');
+                }
+
+                // 渲染模型卡片
+                this.renderModels(data.models || []);
+            }
+
+            renderModels(models) {
+                const container = document.getElementById('models-container');
+                container.innerHTML = '';
+
+                // 按状态排序：训练中的在前面
+                const sortedModels = models.sort((a, b) => {
+                    if (a.model_state === 'Training' && b.model_state === 'Completed') return -1;
+                    if (a.model_state === 'Completed' && b.model_state === 'Training') return 1;
+                    return a.model_name.localeCompare(b.model_name);
+                });
+
+                sortedModels.forEach(model => {
+                    const modelCard = this.createModelCard(model);
+                    container.appendChild(modelCard);
+                });
+            }
+
+            createModelCard(model) {
+                const card = document.createElement('div');
+                card.className = 'model-card';
+
+                const isCompleted = model.model_state === 'Completed';
+                const statusClass = isCompleted ? 'status-completed' : 'status-training';
+                const statusText = isCompleted ? '已完成' : '训练中';
+
+                let cardContent = `
+                    <div class="model-header">
+                        <div class="model-name">${model.model_name}</div>
+                        <div class="status-badge ${statusClass}">${statusText}</div>
+                    </div>
+                `;
+
+                if (isCompleted) {
+                    // 已完成的模型显示评估结果
+                    if (model.eval_result) {
+                        cardContent += `
+                            <div class="metrics">
+                                <div class="metric-row">
+                                    <span class="metric-label">准确率:</span>
+                                    <span class="metric-value">${(model.eval_result.eval_accuracy * 100).toFixed(2)}%</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">损失值:</span>
+                                    <span class="metric-value">${model.eval_result.eval_loss.toFixed(4)}</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">困惑度:</span>
+                                    <span class="metric-value">${model.eval_result.eval_perplexity.toFixed(2)}</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">训练轮次:</span>
+                                    <span class="metric-value">${model.eval_result.epoch}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // 训练中的模型显示进度和当前状态
+                    const progressPercent = parseInt(model.training_rate) || 0;
+                    
+                    cardContent += `
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercent}%">
+                                    <div class="progress-text">${model.training_rate}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    if (model.training_state) {
+                        cardContent += `
+                            <div class="metrics">
+                                <div class="metric-row">
+                                    <span class="metric-label">当前轮次:</span>
+                                    <span class="metric-value">${model.training_state.epoch ? model.training_state.epoch.toFixed(2) : 'N/A'}</span>
+                                </div>
+                        `;
+                        
+                        if (model.training_state.step) {
+                            cardContent += `
+                                <div class="metric-row">
+                                    <span class="metric-label">训练步数:</span>
+                                    <span class="metric-value">${model.training_state.step.toLocaleString()}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        if (model.training_state.loss) {
+                            cardContent += `
+                                <div class="metric-row">
+                                    <span class="metric-label">当前损失:</span>
+                                    <span class="metric-value">${model.training_state.loss.toFixed(4)}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        if (model.training_state.learning_rate) {
+                            cardContent += `
+                                <div class="metric-row">
+                                    <span class="metric-label">学习率:</span>
+                                    <span class="metric-value">${model.training_state.learning_rate.toExponential(2)}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        if (model.training_state.eval_accuracy) {
+                            cardContent += `
+                                <div class="metric-row">
+                                    <span class="metric-label">评估准确率:</span>
+                                    <span class="metric-value">${(model.training_state.eval_accuracy * 100).toFixed(2)}%</span>
+                                </div>
+                            `;
+                        }
+                        
+                        cardContent += '</div>';
+                    }
+                }
+
+                card.innerHTML = cardContent;
+                return card;
+            }
+
+            showError(message) {
+                const errorContainer = document.getElementById('error-container');
+                errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+            }
+
+            clearError() {
+                document.getElementById('error-container').innerHTML = '';
+            }
+        }
+
+        // 页面加载完成后启动监控
+        document.addEventListener('DOMContentLoaded', () => {
+            new ModelMonitor();
+        });
+    </script>
+</body>
+</html>

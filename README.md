@@ -38,3 +38,9 @@ tmux attach -t session_name//重新进入
 杀死会话：进入后exit或tmux kill-session -t session_named
 
 srun -N 1 -n 1 -X -u -p normal --gres=gpu:1 -c 2 --mem=1M -t 0-96:00:00 bash run_clm.sh
+
+ss -tlnp | grep -E ":808[0-9]"
+
+kill -9 1914709
+
+cd /home/kuangph/hf-starter/Web_Display && ./stop_web_server.sh && sleep 2 && python3 web_server.py --port 8081

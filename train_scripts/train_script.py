@@ -458,6 +458,10 @@ def main():
         "Version4_Method4",
         "Version4_Method5",
         "Version4_Method6",
+        "Version4_Method7",
+        "Version4_Method4",
+        "Version4_Method5",
+        "Version4_Method6",
         "Version4_Method7"
     ]
     output_dir_name = [
@@ -473,7 +477,11 @@ def main():
         "v4m4",
         "v4m5",
         "v4m6",
-        "v4m7"
+        "v4m7",
+        "v4m4_2",
+        "v4m5_2",
+        "v4m6_2",
+        "v4m7_2"
     ]
     sessions_name = [
         "base",
@@ -488,7 +496,11 @@ def main():
         "v4m4",
         "v4m5",
         "v4m6",
-        "v4m7"
+        "v4m7",
+        "v4m4-2",
+        "v4m5-2",
+        "v4m6-2",
+        "v4m7-2"
     ]
     
     print("自动化训练任务监控脚本启动")
@@ -516,3 +528,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# /home/kuangph/.conda/envs/pt/bin/python -u "/home/kuangph/hf-starter/train_scripts/train_script.py"
