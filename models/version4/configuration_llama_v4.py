@@ -40,3 +40,6 @@ class Method6Config_v4(LlamaConfig):
 
 class Method7Config_v4(LlamaConfig):
     model_type = "method7-v4"
+
+class Method8Config_v4(LlamaConfig):
+    model_type = "method8-v4"

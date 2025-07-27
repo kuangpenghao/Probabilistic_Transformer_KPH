@@ -652,7 +652,7 @@ def main():
                 layer_weights = model_to_check.get_all_layer_weights()
                 
                 # 根据不同的模型类型处理权重数据
-                if any(method in model_class_name for method in ["Method4LlamaForCausalLM_v4", "Method5LlamaForCausalLM_v4", "Method6LlamaForCausalLM_v4", "Method7LlamaForCausalLM_v4"]):
+                if any(method in model_class_name for method in ["Method4LlamaForCausalLM_v4", "Method5LlamaForCausalLM_v4", "Method6LlamaForCausalLM_v4", "Method7LlamaForCausalLM_v4","Method8LlamaForCausalLM_v4"]):
                     # Version4方法：直接调用save_learned_parameters方法
                     logger.info(f"检测到Version4方法 ({model_class_name})，使用专用保存方法...")
                     save_path = model_to_check.save_learned_parameters(training_args.output_dir)
