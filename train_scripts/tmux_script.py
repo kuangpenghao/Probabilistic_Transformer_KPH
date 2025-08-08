@@ -85,17 +85,10 @@ if __name__ == "__main__":
 
     ''''''
     sessions=[
-        "base",
-        "v4m1",
-        "v4m4",
-        "v4m5",
-        "v4m6",
-        "v4m7",
-        "v4m8",
-        "v4m4-Adj",
-        "v4m5-Adj",
-        "v4m6-Adj",
-        "v4m5-Norm"
+        "v4m1a",
+        "v4m1b",
+        "v4m1c",
+        "v4m1_2"
     ]
     
     for session in sessions:

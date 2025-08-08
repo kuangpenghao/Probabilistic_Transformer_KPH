@@ -446,76 +446,22 @@ def main():
     # 配置三个列表：配置文件名、输出目录名、会话名
     # 根据测试结果调整为实际的会话名
     configs_name = [
-        "Original_llama_llamatiny",
-        "Version2_Method1",
-        "Version2_Method3",
-        "Version3_Method1",
-        "Version3_Method3_1",
-        "Version3_Method3_2",
-        "Version4_Method1",
-        "Version4_Method2",
-        "Version4_Method3",
-        "Version4_Method4",
-        "Version4_Method5",
-        "Version4_Method6",
-        "Version4_Method7",
-        "Version4_Method4",
-        "Version4_Method5",
-        "Version4_Method6",
-        "Version4_Method7",
-        "Version4_Method8",
-        "Version4_Method4",
-        "Version4_Method5",
-        "Version4_Method6",
-        "Version4_Method5"
+        "Version4_Method1A",
+        "Version4_Method1B",
+        "Version4_Method1C",
+        "Version4_Method1"
     ]
     output_dir_name = [
-        "base",
-        "v2m1",
-        "v2m3",
-        "v3m1",
-        "v3m3_1",
-        "v3m3_2",
-        "v4m1",
-        "v4m2",
-        "v4m3",
-        "v4m4",
-        "v4m5",
-        "v4m6",
-        "v4m7",
-        "v4m4_2",
-        "v4m5_2",
-        "v4m6_2",
-        "v4m7_2",
-        "v4m8",
-        "v4m4_Adj",
-        "v4m5_Adj",
-        "v4m6_Adj",
-        "v4m5_Norm"
+        "v4m1a",
+        "v4m1b",
+        "v4m1c",
+        "v4m1_2"
     ]
     sessions_name = [
-        "base",
-        "v2m1",
-        "v2m3",
-        "v3m1",
-        "v3m3-1",
-        "v3m3-2",
-        "v4m1",
-        "v4m2",
-        "v4m3",
-        "v4m4",
-        "v4m5",
-        "v4m6",
-        "v4m7",
-        "v4m4-2",
-        "v4m5-2",
-        "v4m6-2",
-        "v4m7-2",
-        "v4m8",
-        "v4m4-Adj",
-        "v4m5-Adj",
-        "v4m6-Adj",
-        "v4m5-Norm"
+        "v4m1a",
+        "v4m1b",
+        "v4m1c",
+        "v4m1_2"
     ]
     
     print("自动化训练任务监控脚本启动")
