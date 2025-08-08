@@ -92,6 +92,10 @@ if __name__ == "__main__":
         "v4m6",
         "v4m7",
         "v4m8",
+        "v4m4-Adj",
+        "v4m5-Adj",
+        "v4m6-Adj",
+        "v4m5-Norm"
     ]
     
     for session in sessions:

@@ -16,7 +16,8 @@ from .Method1_v4 import (
 class v4m5_ModifiedScailingComputation(nn.Module):
     """
     封装修改后的注意力缩放计算逻辑
-    学习一个向量，向量的每一项为a_i*sqrt(d_k)，其中a_i是可学习参数
+    学习一个向量，向量的每一项为a_i/sqrt(d_k)，其中a_i是可学习参数
+    约束条件：a_1 + a_2 + ... + a_m = m (通过softmax实现)
     每个层都有自己独立的参数向量，长度等于该层的索引+1
     """
     def __init__(self, head_dim: int, layer_idx: int):
@@ -24,9 +25,10 @@ class v4m5_ModifiedScailingComputation(nn.Module):
         self.head_dim = head_dim
         self.layer_idx = layer_idx
         
-        # 初始化可学习参数向量a_i，长度为layer_idx+1
+        # 初始化可学习得分向量b_i，长度为layer_idx+1
+        # 这些得分经过softmax后乘以m得到a_i，满足sum(a_i) = m
         vector_length = layer_idx + 1
-        self.a_params = nn.Parameter(torch.ones(vector_length))  # 使用log确保正值
+        self.score_params = nn.Parameter(torch.zeros(vector_length))  # 初始化为0，softmax后为均匀分布
     
     def compute_modified_scaling(self, qk_matrices: List[torch.Tensor], layer_idx: int) -> torch.Tensor:
         """
@@ -39,16 +41,16 @@ class v4m5_ModifiedScailingComputation(nn.Module):
         Returns:
             修改后的注意力权重
         """
-        # 构建缩放向量，每一项为1/(a_i*sqrt(d_k))的倒数
+        # 构建缩放向量，每一项为a_i/sqrt(d_k)
         num_matrices = len(qk_matrices)
-        scaling_vector = torch.zeros(num_matrices, device=qk_matrices[0].device, dtype=qk_matrices[0].dtype)
         
-        for i in range(num_matrices):
-            # 每层都有自己的参数向量，长度等于层索引+1
-            a_i = self.a_params[i]
-            
-            # 计算1/(a_i*sqrt(d_k))
-            scaling_vector[i] = 1.0 / (a_i * math.sqrt(self.head_dim))
+        # 通过softmax得到归一化权重，然后乘以m确保sum = m
+        softmax_weights = torch.softmax(self.score_params[:num_matrices], dim=0)
+        a_params = softmax_weights * num_matrices  # 确保 sum(a_i) = m
+        
+        # 计算缩放向量：a_i/sqrt(d_k)
+        sqrt_d_k = math.sqrt(self.head_dim)
+        scaling_vector = a_params / sqrt_d_k
         
         # 对所有QK^T矩阵进行加权求和
         weighted_qk = torch.zeros_like(qk_matrices[-1])
@@ -105,20 +107,27 @@ class Method5LlamaForCausalLM_v4(Method1LlamaForCausalLM_v4):
     def get_all_layer_weights(self):
         """
         获取所有层的可学习参数向量
-        返回格式: List[torch.Tensor] 每层的参数向量，长度为layer_idx+1
+        返回格式: List[Dict] 每层包含score_params和对应的a_params
         """
         all_weights = []
         
         for layer_idx, layer in enumerate(self.model.layers):
-            layer_weights = torch.empty(0)  # 默认空tensor
+            layer_weights = {}
             
             # 获取该层attention中的可学习参数向量
             if hasattr(layer, 'self_attn') and hasattr(layer.self_attn, 'modified_scaling'):
                 scaling_module = layer.self_attn.modified_scaling
-                if hasattr(scaling_module, 'log_a_params'):
-                    # 获取实际的a参数（对log_a_params取exp）
-                    a_params = torch.exp(scaling_module.log_a_params).detach().cpu()
-                    layer_weights = a_params
+                if hasattr(scaling_module, 'score_params'):
+                    # 获取原始得分参数
+                    score_params = scaling_module.score_params.detach().cpu()
+                    layer_weights['score_params'] = score_params
+                    
+                    # 计算对应的a参数（经过softmax和缩放）
+                    num_params = len(score_params)
+                    if num_params > 0:
+                        softmax_weights = torch.softmax(score_params, dim=0)
+                        a_params = softmax_weights * num_params
+                        layer_weights['a_params'] = a_params
             
             all_weights.append(layer_weights)
             
@@ -137,8 +146,11 @@ class Method5LlamaForCausalLM_v4(Method1LlamaForCausalLM_v4):
         # 转换为可序列化格式
         weights_data = {}
         for layer_idx, layer_weights in enumerate(all_weights):
-            if len(layer_weights) > 0:  # 如果该层有参数
-                weights_data[f"layer_{layer_idx}"] = layer_weights.numpy().tolist()
+            if layer_weights:  # 如果该层有参数
+                layer_data = {}
+                for param_name, param_tensor in layer_weights.items():
+                    layer_data[param_name] = param_tensor.numpy().tolist()
+                weights_data[f"layer_{layer_idx}"] = layer_data
         
         # 保存到文件
         weights_file = os.path.join(output_dir, "method5_v4_learned_parameters.json")
@@ -151,18 +163,21 @@ class Method5LlamaForCausalLM_v4(Method1LlamaForCausalLM_v4):
             f.write("Method5_v4 Learned Parameters\n")
             f.write("="*40 + "\n")
             f.write(f"Total layers: {len(weights_data)}\n")
-            f.write(f"Parameters: Vector a_i for scaling 1/(a_i*sqrt(d_k))\n\n")
+            f.write(f"Parameters: score_params → softmax → a_i with constraint sum(a_i) = m\n")
+            f.write(f"Scaling formula: weighted sum with a_i/sqrt(d_k)\n\n")
             
             for layer_idx, layer_weights in enumerate(all_weights):
-                if len(layer_weights) > 0:
-                    weights_np = layer_weights.numpy()
-                    f.write(f"Layer {layer_idx} (vector length: {len(weights_np)}):\n")
-                    f.write(f"  Parameters: {weights_np}\n")
-                    f.write(f"  Mean: {weights_np.mean():.6f}\n")
-                    f.write(f"  Std: {weights_np.std():.6f}\n")
-                    f.write(f"  Min: {weights_np.min():.6f}\n")
-                    f.write(f"  Max: {weights_np.max():.6f}\n")
-                    f.write(f"  Scaling formula: weighted sum with 1/(a_i*sqrt(d_k))\n")
+                if layer_weights:
+                    score_params = layer_weights['score_params'].numpy()
+                    a_params = layer_weights['a_params'].numpy()
+                    
+                    f.write(f"Layer {layer_idx} (vector length: {len(score_params)}):\n")
+                    f.write(f"  Raw scores: {score_params}\n")
+                    f.write(f"  After softmax*m: {a_params}\n")
+                    f.write(f"  Sum of a_params: {a_params.sum():.6f} (should be {len(a_params)})\n")
+                    f.write(f"  Score mean: {score_params.mean():.6f}, std: {score_params.std():.6f}\n")
+                    f.write(f"  A_param mean: {a_params.mean():.6f}, std: {a_params.std():.6f}\n")
+                    f.write(f"  Scaling formula: (a_i/sqrt({self.model.config.hidden_size // self.model.config.num_attention_heads})) weighted sum\n")
                     f.write("-" * 30 + "\n")
         
         return weights_file

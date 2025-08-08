@@ -463,7 +463,11 @@ def main():
         "Version4_Method5",
         "Version4_Method6",
         "Version4_Method7",
-        "Version4_Method8"
+        "Version4_Method8",
+        "Version4_Method4",
+        "Version4_Method5",
+        "Version4_Method6",
+        "Version4_Method5"
     ]
     output_dir_name = [
         "base",
@@ -483,7 +487,11 @@ def main():
         "v4m5_2",
         "v4m6_2",
         "v4m7_2",
-        "v4m8"
+        "v4m8",
+        "v4m4_Adj",
+        "v4m5_Adj",
+        "v4m6_Adj",
+        "v4m5_Norm"
     ]
     sessions_name = [
         "base",
@@ -503,7 +511,11 @@ def main():
         "v4m5-2",
         "v4m6-2",
         "v4m7-2",
-        "v4m8"
+        "v4m8",
+        "v4m4-Adj",
+        "v4m5-Adj",
+        "v4m6-Adj",
+        "v4m5-Norm"
     ]
     
     print("自动化训练任务监控脚本启动")

@@ -1,6 +1,6 @@
 {
-  "timestamp": "2025-07-27T12:30:13.623407",
-  "total_models": 7,
+  "timestamp": "2025-08-08T18:36:25.223163",
+  "total_models": 11,
   "models": [
     {
       "model_name": "base",
@@ -52,53 +52,109 @@
         "eval_accuracy": 0.5015424243562984,
         "eval_loss": 2.5436031818389893,
         "eval_perplexity": 12.72544053952114,
-        "eval_runtime": 5.8703,
+        "eval_runtime": 5.8824,
         "eval_samples": 143,
-        "eval_samples_per_second": 24.36,
-        "eval_steps_per_second": 3.066
+        "eval_samples_per_second": 24.31,
+        "eval_steps_per_second": 3.06
       }
     },
     {
       "model_name": "v4m7",
-      "model_state": "Training",
-      "training_state": {
-        "epoch": 4.011174827231289,
-        "eval_accuracy": 0.4953795593756512,
-        "eval_loss": 2.578653335571289,
-        "eval_runtime": 5.8942,
-        "eval_samples_per_second": 24.261,
-        "eval_steps_per_second": 3.054,
-        "step": 136400
-      },
-      "training_rate": "80%"
+      "model_state": "Completed",
+      "eval_result": {
+        "epoch": 5.0,
+        "eval_accuracy": 0.5005004765630071,
+        "eval_loss": 2.544804811477661,
+        "eval_perplexity": 12.740740996939099,
+        "eval_runtime": 5.8707,
+        "eval_samples": 143,
+        "eval_samples_per_second": 24.358,
+        "eval_steps_per_second": 3.066
+      }
     },
     {
       "model_name": "v4m5",
-      "model_state": "Training",
-      "training_state": {
-        "epoch": 4.264078811939421,
-        "eval_accuracy": 0.49831067808595897,
-        "eval_loss": 2.5607388019561768,
-        "eval_runtime": 5.9033,
-        "eval_samples_per_second": 24.224,
-        "eval_steps_per_second": 3.049,
-        "step": 145000
-      },
-      "training_rate": "85%"
+      "model_state": "Completed",
+      "eval_result": {
+        "epoch": 5.0,
+        "eval_accuracy": 0.5011188127944357,
+        "eval_loss": 2.542977809906006,
+        "eval_perplexity": 12.717484894050848,
+        "eval_runtime": 5.892,
+        "eval_samples": 143,
+        "eval_samples_per_second": 24.27,
+        "eval_steps_per_second": 3.055
+      }
     },
     {
       "model_name": "v4m8",
-      "model_state": "Training",
-      "training_state": {
-        "epoch": 0.023525952065872664,
-        "eval_accuracy": 0.2154133116517093,
-        "eval_loss": 5.728565692901611,
-        "eval_runtime": 5.8878,
-        "eval_samples_per_second": 24.287,
-        "eval_steps_per_second": 3.057,
-        "step": 800
-      },
-      "training_rate": "0%"
+      "model_state": "Completed",
+      "eval_result": {
+        "epoch": 5.0,
+        "eval_accuracy": 0.5016790732472217,
+        "eval_loss": 2.541343927383423,
+        "eval_perplexity": 12.696722983631314,
+        "eval_runtime": 5.8534,
+        "eval_samples": 143,
+        "eval_samples_per_second": 24.43,
+        "eval_steps_per_second": 3.075
+      }
+    },
+    {
+      "model_name": "v4m4_Adj",
+      "model_state": "Completed",
+      "eval_result": {
+        "epoch": 5.0,
+        "eval_accuracy": 0.5009411692362352,
+        "eval_loss": 2.5466833114624023,
+        "eval_perplexity": 12.76469697231255,
+        "eval_runtime": 5.8732,
+        "eval_samples": 143,
+        "eval_samples_per_second": 24.348,
+        "eval_steps_per_second": 3.065
+      }
+    },
+    {
+      "model_name": "v4m5_Adj",
+      "model_state": "Completed",
+      "eval_result": {
+        "epoch": 5.0,
+        "eval_accuracy": 0.5001417732243331,
+        "eval_loss": 2.547135829925537,
+        "eval_perplexity": 12.77047454049839,
+        "eval_runtime": 5.8457,
+        "eval_samples": 143,
+        "eval_samples_per_second": 24.462,
+        "eval_steps_per_second": 3.079
+      }
+    },
+    {
+      "model_name": "v4m6_Adj",
+      "model_state": "Completed",
+      "eval_result": {
+        "epoch": 5.0,
+        "eval_accuracy": 0.5002715896707103,
+        "eval_loss": 2.5477170944213867,
+        "eval_perplexity": 12.777899721731984,
+        "eval_runtime": 5.8263,
+        "eval_samples": 143,
+        "eval_samples_per_second": 24.544,
+        "eval_steps_per_second": 3.089
+      }
+    },
+    {
+      "model_name": "v4m5_Norm",
+      "model_state": "Completed",
+      "eval_result": {
+        "epoch": 5.0,
+        "eval_accuracy": 0.5012486292408129,
+        "eval_loss": 2.545957565307617,
+        "eval_perplexity": 12.755436403385508,
+        "eval_runtime": 6.1085,
+        "eval_samples": 143,
+        "eval_samples_per_second": 23.41,
+        "eval_steps_per_second": 2.947
+      }
     }
   ]
 }
