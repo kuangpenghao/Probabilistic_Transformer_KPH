@@ -55,3 +55,9 @@ class Method1CConfig_v4(LlamaConfig):
 
 class Method1DConfig_v4(LlamaConfig):
     model_type = "method1d-v4"
+
+class MethodCbaseConfig_v4(LlamaConfig):
+    model_type = "methodcbase-v4"
+
+class MethodDbaseConfig_v4(LlamaConfig):
+    model_type = "methoddbase-v4"

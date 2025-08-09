@@ -88,7 +88,11 @@ if __name__ == "__main__":
         "v4m1a",
         "v4m1b",
         "v4m1c",
-        "v4m1d"
+        "v4m1d",
+        "v4m1b_2",
+        "v4m1c_2",
+        "v4mc",
+        "v4md"
     ]
     
     for session in sessions:
