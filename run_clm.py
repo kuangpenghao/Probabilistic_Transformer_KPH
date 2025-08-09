@@ -620,6 +620,71 @@ def main():
 
     # Training
     if training_args.do_train:
+        # 在开始训练前，执行一次forward pass来触发可能的动态参数创建，然后测量参数数量
+        # 注意：不是所有模型都会在forward时创建参数
+        # - Method1C等模型可能在第一次forward时创建权重向量
+        # - Method1D等模型的MLP参数在初始化时就已创建，forward不会增加参数
+        try:
+            logger.info("执行第一次forward pass以触发动态参数创建...")
+            
+            # 获取一个训练样本来执行forward pass
+            sample_batch = next(iter(trainer.get_train_dataloader()))
+            
+            # 记录forward前的参数数量
+            pre_forward_params = sum({p.data_ptr(): p.numel() for p in model.parameters()}.values())
+            logger.info(f"Forward前的参数数量: {pre_forward_params:,} ({pre_forward_params/2**20:.2f}M params)")
+            
+            # 将模型设置为训练模式
+            model.train()
+            
+            # 执行一次forward pass（不进行backward）
+            with torch.no_grad():
+                if hasattr(trainer, '_prepare_inputs'):
+                    inputs = trainer._prepare_inputs(sample_batch)
+                else:
+                    # 简单的输入准备
+                    inputs = {k: v.to(model.device) if isinstance(v, torch.Tensor) else v 
+                             for k, v in sample_batch.items()}
+                
+                # 执行forward pass
+                outputs = model(**inputs)
+            
+            # 记录forward后的参数数量
+            post_forward_params = sum({p.data_ptr(): p.numel() for p in model.parameters()}.values())
+            
+            # 保存参数数量到txt文件
+            # 确保输出目录存在
+            os.makedirs(training_args.output_dir, exist_ok=True)
+            params_file = os.path.join(training_args.output_dir, "total_parameters_post_first_forward.txt")
+            
+            with open(params_file, 'w') as f:
+                f.write(f"{post_forward_params}\n")
+            
+            logger.info(f"Forward后的参数数量: {post_forward_params:,} ({post_forward_params/2**20:.2f}M params)")
+            logger.info(f"参数数量已保存到: {params_file}")
+            
+            # 如果参数数量发生变化，记录变化量
+            if post_forward_params != pre_forward_params:
+                param_increase = post_forward_params - pre_forward_params
+                logger.info(f"Dynamic参数增加: {param_increase:,} ({param_increase/2**20:.2f}M params)")
+                
+                # 也保存参数变化信息
+                change_file = os.path.join(training_args.output_dir, "parameter_change_info.txt")
+                with open(change_file, 'w') as f:
+                    f.write(f"Pre-forward parameters: {pre_forward_params}\n")
+                    f.write(f"Post-forward parameters: {post_forward_params}\n")
+                    f.write(f"Parameter increase: {param_increase}\n")
+                    f.write(f"Increase ratio: {param_increase/pre_forward_params:.4f}\n")
+                
+                logger.info(f"参数变化信息已保存到: {change_file}")
+            else:
+                logger.info("Forward pass未导致参数数量变化")
+                
+        except Exception as e:
+            logger.warning(f"执行forward pass测量参数时出现错误: {e}")
+            logger.info("继续正常训练...")
+        
+        # 开始正常训练
         checkpoint = None
         if training_args.resume_from_checkpoint is not None:
             checkpoint = training_args.resume_from_checkpoint

@@ -87,7 +87,8 @@ class v4m1C_ModifiedScailingComputation(nn.Module):
             
             # 使用exp确保权重为正，初始值exp(0)=1
             exp_weight_vector = torch.exp(weight_vector)
-            weighted_qk += scaling_vector[i] * (qk_matrix * exp_weight_vector)
+            exp_weight_column = exp_weight_vector.unsqueeze(1)  # [seq_len] -> [seq_len, 1]
+            weighted_qk += scaling_vector[i] * (qk_matrix * exp_weight_column)
         
         return weighted_qk
 

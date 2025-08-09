@@ -1,3 +1,5 @@
+# 模型实时训练结果：http://10.15.89.226:8085（局域网访问）
+
 # Huggingface Transformers Starter Code
 
 General starter code for creative model architecture with huggingface transformer library. Users may implement customized llama model in `models` directory.
