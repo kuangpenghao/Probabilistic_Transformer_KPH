@@ -399,6 +399,10 @@
                                     <span class="metric-label">训练轮次:</span>
                                     <span class="metric-value">${model.eval_result.epoch}</span>
                                 </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">评估耗时:</span>
+                                    <span class="metric-value">${model.eval_result.eval_runtime.toFixed(3)}s</span>
+                                </div>
                             </div>
                         `;
                     }
