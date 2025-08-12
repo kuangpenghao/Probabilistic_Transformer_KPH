@@ -97,6 +97,8 @@ class v4mcbase_ModifiedScalingComputation(nn.Module):
         
         # 显式列向量广播：[seq_len] -> [1, 1, seq_len, 1]
         exp_weight_broadcast = exp_weight_vector.view(1, 1, seq_len, 1)
+
+        exp_weight_broadcast=exp_weight_broadcast + 1
         
         # 与QK^T矩阵逐元素相乘
         weighted_qk = scaled_qk * exp_weight_broadcast

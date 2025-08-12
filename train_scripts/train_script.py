@@ -389,7 +389,7 @@ def process_single_session(session_name: str, config_name: str, output_dir_name:
         
     finally:
         # 无论成功还是失败，都要清理临时脚本
-        time.sleep(30)
+        time.sleep(15)
         cleanup_temporary_script(temp_script_path)
 
 
@@ -446,38 +446,56 @@ def main():
     # 配置三个列表：配置文件名、输出目录名、会话名
     # 根据测试结果调整为实际的会话名
     configs_name = [
+        "Original_llama_llamatiny",
+        "Method3",
+        "Method4",
+        "Version2_Method1",
+        "Version2_Method3",
+        "Version3_Method1",
+        "Version3_Method3_1",
+        "Version3_Method3_2",
+        "Version4_Method1",
         "Version4_Method1A",
         "Version4_Method1B",
         "Version4_Method1C",
         "Version4_Method1D",
-        "Version4_Method1",
-        "Original_llama_llamatiny",
-        "Version4_Method1B",
-        "Version4_Method1C",
+        "Version4_Method1E",
         "Version4_MethodCbase",
         "Version4_MethodDbase"
     ]
     output_dir_name = [
+        "base",
+        "v1m3",
+        "v1m4",
+        "v2m1",
+        "v2m3",
+        "v3m1",
+        "v3m3_1",
+        "v3m3_2",
+        "v4m1",
         "v4m1a",
         "v4m1b",
         "v4m1c",
         "v4m1d",
-        "v4m1_2",
-        "base",
-        "v4m1b_2",
-        "v4m1c_2",
+        "v4m1e",
         "v4mc",
         "v4md"
     ]
     sessions_name = [
+        "base",
+        "v1m3",
+        "v1m4",
+        "v2m1",
+        "v2m3",
+        "v3m1",
+        "v3m3_1",
+        "v3m3_2",
+        "v4m1",
         "v4m1a",
         "v4m1b",
         "v4m1c",
         "v4m1d",
-        "v4m1_2",
-        "base",
-        "v4m1b_2",
-        "v4m1c_2",
+        "v4m1e",
         "v4mc",
         "v4md"
     ]
