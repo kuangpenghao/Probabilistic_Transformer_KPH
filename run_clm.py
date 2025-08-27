@@ -54,6 +54,7 @@ from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
 import models
+import wandb
 
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
@@ -263,6 +264,37 @@ def main():
         model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+
+    # Initialize wandb if reporting to wandb is enabled
+    if "wandb" in training_args.report_to:
+        # Initialize wandb (supports both normal runs and sweeps)
+        wandb.init(
+            entity="kuangpenghao-shanghaitech-university",
+            project="probabilistic-transformer-sweep0824-2EPOCHS",
+            name=f"run_{training_args.output_dir.split('/')[-1]}"
+        )
+
+        training_args.output_dir = os.path.join(training_args.output_dir, wandb.run.id)
+        # Override hyperparameters with wandb config if in sweep mode
+        if wandb.config:
+            training_args.learning_rate = wandb.config.get("learning_rate", training_args.learning_rate)
+            training_args.weight_decay = wandb.config.get("weight_decay", training_args.weight_decay)
+            training_args.warmup_ratio = wandb.config.get("warmup_ratio", training_args.warmup_ratio)
+
+            # Handle lr_scheduler_type (convert string to enum if needed)
+            if "lr_scheduler_type" in wandb.config:
+                # 导入 SchedulerType
+                from transformers.training_args import SchedulerType
+
+                lr_scheduler_type = wandb.config.get("lr_scheduler_type")
+                if isinstance(lr_scheduler_type, str):
+                    # 将字符串转换为对应的 SchedulerType 枚举
+                    training_args.lr_scheduler_type = SchedulerType(lr_scheduler_type)
+
+            print(f"Sweep parameters - LR: {training_args.learning_rate}, "
+                  f"Weight Decay: {training_args.weight_decay}, "
+                  f"Warmup Ratio: {training_args.warmup_ratio}, "
+                  f"LR Scheduler: {training_args.lr_scheduler_type}")
 
     # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
     # information sent is the one passed as arguments along with your Python/PyTorch versions.

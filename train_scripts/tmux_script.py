@@ -75,6 +75,25 @@ def attach_tmux_session(session_name):
         error_msg = result.stderr.decode().strip()
         print(f" 无法进入会话 '{session_name}': {error_msg}")
 
+def submit_command(session_name: str,command_line) -> bool:
+    try:
+        # 向tmux会话发送命令
+        result = subprocess.run(
+            ["tmux", "send-keys", "-t", session_name, command_line, "Enter"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        success = result.returncode == 0
+        if success:
+            print(f" 成功向会话 {session_name} 提交训练任务")
+            return True
+        else:
+            print(f" 向会话 {session_name} 提交任务失败")
+            return False
+    except Exception as e:
+        print(f" 提交任务时出错: {e}")
+        return False
+
 if __name__ == "__main__":
 
     '''
@@ -85,24 +104,31 @@ if __name__ == "__main__":
 
     ''''''
     sessions=[
-        "base",
-        "v1m3",
-        "v1m4",
-        "v2m1",
-        "v2m3",
-        "v3m1",
-        "v3m3_1",
-        "v3m3_2",
-        "v4m1",
-        "v4m1a",
-        "v4m1b",
-        "v4m1c",
-        "v4m1d",
-        "v4m1e",
-        "v4mc",
-        "v4md"
+        "gpu0",
+        "gpu1",
+        "gpu2",
+        "gpu3",
+        "gpu4",
+        "gpu5",
+        "gpu6",
+        "gpu7"
     ]
-    
-    for session in sessions:
+
+    for i,session in enumerate(sessions):
+        '''
+        command_line = (
+            f"conda activate pt && "
+            f"slash activate kphtemp && "
+            f"export CUDA_VISIBLE_DEVICES={i} && "
+            f"wandb agent --count 1 kuangpenghao-shanghaitech-university/Probabilistic_Transformer_KPH/29v39rxq"
+        )
+        submit_command(session, command_line)
+        '''
+        '''
+        create_tmux_session(session)
+        '''
+        
         attach_tmux_session(session)
-# /home/kuangph/.conda/envs/pt/bin/python -u "/home/kuangph/hf-starter/train_scripts/tmux_script.py"
+        ''''''
+# python -u "train_scripts/tmux_script.py"
+# export CUDA_VISIBLE_DEVICES=2 && wandb agent --count 3 kuangpenghao-shanghaitech-university/Probabilistic_Transformer_KPH/j0o871p8

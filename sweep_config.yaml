@@ -1,0 +1,76 @@
+program: run_clm.py
+method: random
+metric:
+  name: eval/loss
+  goal: minimize
+
+parameters:
+  learning_rate:
+    distribution: log_uniform_values
+    min: 0.000001
+    max: 0.001
+  
+  weight_decay:
+    distribution: log_uniform_values
+    min: 0.00001
+    max: 0.1
+  
+  lr_scheduler_type:
+    values: ["cosine"]
+  
+  warmup_ratio:
+    distribution: uniform
+    min: 0.01
+    max: 0.1
+
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - "--config_name"
+  - configs/Version4_Method1E.json
+  - "--tokenizer_name"
+  - TinyLlama/TinyLlama-1.1B-intermediate-step-1195k-token-2.5T
+  - "--dataset_name"
+  - wikitext
+  - "--dataset_config_name"
+  - wikitext-103-raw-v1
+  - "--per_device_train_batch_size"
+  - "2"
+  - "--per_device_eval_batch_size"
+  - "8"
+  - "--gradient_accumulation_steps"
+  - "1"
+  - "--block_size"
+  - "2048"
+  - "--attn_implementation"
+  - eager
+  - "--bf16"
+  - "--torch_dtype"
+  - bfloat16
+  - "--do_train"
+  - "--do_eval"
+  - "--do_predict"
+  - "--num_train_epochs"
+  - "1.0"
+  - "--save_total_limit"
+  - "1"
+  - "--save_strategy"
+  - steps
+  - "--save_steps"
+  - "200"
+  - "--evaluation_strategy"
+  - steps
+  - "--eval_steps"
+  - "200"
+  - "--logging_steps"
+  - "50"
+  - "--load_best_model_at_end"
+  - "True"
+  - "--metric_for_best_model"
+  - eval_loss
+  - "--report_to"
+  - wandb
+  - "--output_dir"
+  - outputs/v4m1E
+  - ${args}

@@ -47,3 +47,20 @@ ss -tlnp | grep -E ":808[0-9]"
 kill -9 1914709
 
 cd /home/kuangph/hf-starter/Web_Display && ./stop_web_server.sh && sleep 2 && python3 web_server.py --port 8081
+
+ssh -L 7890:127.0.0.1:7890 share@10.15.89.221
+ssh -L 7891:127.0.0.1:7890 share@10.15.89.221
+export http_proxy="http://127.0.0.1:7890"
+export https_proxy="http://127.0.0.1:7890"
+
+ejg=q*.cnCWtsXL0W6j%
+
+1. 创建sweep
+wandb sweep sweep_config.yaml
+2. 启动agent（使用返回的sweep_id）
+wandb agent <sweep_id>
+export CUDA_VISIBLE_DEVICES=4 && wandb agent --count 4 kuangpenghao-shanghaitech-university/Probabilistic_Transformer_KPH/kgsyy8x9
+
+baseline:31b3665y
+v4m1D:3sg060xf
+v4m1E:kgsyy8x9
